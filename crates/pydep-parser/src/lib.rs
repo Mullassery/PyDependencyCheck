@@ -20,7 +20,7 @@ pub mod constraint;
 pub mod models;
 
 pub use errors::{ParserError, ParserResult};
-pub use models::{Dependency, VersionConstraint, DependencySource};
+pub use models::{Dependency, VersionConstraint, VersionSpecifier, DependencySource};
 
 /// Parse a dependencies file and extract dependencies
 pub fn parse_file(path: &str) -> ParserResult<Vec<Dependency>> {

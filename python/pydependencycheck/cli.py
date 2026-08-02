@@ -166,6 +166,90 @@ def health(path: str):
         console.print(f"\n[green]✓ No circular dependencies[/green]")
 
 
+@cli.command()
+@click.option("--path", "-p", type=click.Path(exists=True), default=".", help="Project path")
+@click.option("--save", is_flag=True, help="Save current scan as baseline")
+def snapshot(path: str, save: bool):
+    """Manage dependency snapshots"""
+    from .storage import SnapshotStorage
+    from .dashboard import CLIDashboard
+
+    scanner = DependencyScanner(path)
+    result = scanner.scan()
+
+    storage = SnapshotStorage()
+    dashboard = CLIDashboard(path)
+
+    if save:
+        with console.status("[bold]Saving snapshot...[/bold]"):
+            snapshot_id = storage.save_snapshot(path, result.to_dict())
+            storage.set_baseline(path)
+        console.print(f"[green]✓[/green] Snapshot saved (ID: {snapshot_id})")
+    else:
+        # Show latest snapshot info
+        latest = storage.get_latest_snapshot(path)
+        if latest:
+            console.print(f"[bold]Latest Snapshot:[/bold]")
+            console.print(f"  Time: {latest.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+            console.print(f"  Dependencies: {latest.dependencies.get('total_count', 'unknown')}")
+            console.print(f"  Health: {latest.health_score or 'unknown'}/100")
+        else:
+            console.print("[yellow]No snapshots found[/yellow]")
+
+
+@cli.command()
+@click.option("--path", "-p", type=click.Path(exists=True), default=".", help="Project path")
+@click.option("--days", "-d", type=int, default=30, help="Number of days to show")
+def history(path: str, days: int):
+    """Show dependency history and trends"""
+    from .storage import SnapshotStorage
+    from .dashboard import CLIDashboard
+
+    storage = SnapshotStorage()
+    dashboard = CLIDashboard(path)
+
+    dashboard.show_timeline(path, days=days)
+
+
+@cli.command()
+@click.option("--path", "-p", type=click.Path(exists=True), default=".", help="Project path")
+@click.option("--baseline", "-b", type=str, default="main", help="Baseline name")
+def drift(path: str, baseline: str):
+    """Detect dependency drift since baseline"""
+    from .storage import SnapshotStorage
+    from .dashboard import CLIDashboard
+
+    storage = SnapshotStorage()
+    dashboard = CLIDashboard(path)
+
+    latest = storage.get_latest_snapshot(path)
+    if not latest:
+        console.print("[yellow]No current snapshot. Run 'scan' first.[/yellow]")
+        return
+
+    baseline_snap = storage.get_baseline(path)
+    if not baseline_snap:
+        console.print(f"[yellow]No baseline '{baseline}' set. Run 'snapshot --save' first.[/yellow]")
+        return
+
+    drift_info = storage._compute_drift(baseline_snap.dependencies, latest.dependencies)
+
+    if not drift_info["changed"]:
+        console.print("[green]✓ No drift detected - dependency set stable[/green]")
+    else:
+        console.print("[yellow]⚠ Drift detected:[/yellow]")
+        if drift_info["added"]:
+            console.print(f"  [green]Added:[/green] {', '.join(drift_info['added'])}")
+        if drift_info["removed"]:
+            console.print(f"  [red]Removed:[/red] {', '.join(drift_info['removed'])}")
+        if drift_info["upgraded"]:
+            console.print(f"  [cyan]Upgraded:[/cyan] {len(drift_info['upgraded'])} packages")
+        if drift_info["downgraded"]:
+            console.print(f"  [magenta]Downgraded:[/magenta] {len(drift_info['downgraded'])} packages")
+
+    dashboard.show_drift_report(path)
+
+
 def _format_table_report(result: ScanResult) -> str:
     """Format scan result as a table"""
     lines = [

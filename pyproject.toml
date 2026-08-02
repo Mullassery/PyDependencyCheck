@@ -53,6 +53,16 @@ visualization = [
     "plotly>=5.0",
     "matplotlib>=3.5",
 ]
+otel = [
+    "opentelemetry-api>=1.0",
+    "opentelemetry-sdk>=1.0",
+    "opentelemetry-exporter-jaeger>=1.0",
+    "opentelemetry-exporter-otlp>=0.43b0",
+    "opentelemetry-exporter-prometheus>=0.43b0",
+]
+sbom = [
+    "cryptography>=41.0",
+]
 
 [project.scripts]
 pydependencycheck = "pydependencycheck.cli:main"

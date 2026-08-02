@@ -1,10 +1,27 @@
+[build-system]
+requires = ["maturin[pyo3]>=1.4,<2.0"]
+build-backend = "maturin"
+
+[package]
+name = "pydependencycheck"
+version = "0.1.0"
+edition = "2021"
+authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
+license = "Proprietary"
+repository = "https://github.com/Mullassery/PyDependencyCheck"
+description = "Dependency intelligence and governance platform for Python"
+
+[lib]
+name = "_pydependencycheck"
+crate-type = ["cdylib"]
+path = "crates/pydep-py/src/lib.rs"
+
 [workspace]
 members = [
     "crates/pydep-parser",
     "crates/pydep-graph",
     "crates/pydep-ast",
     "crates/pydep-security",
-    "crates/pydep-py",
 ]
 resolver = "2"
 
@@ -12,8 +29,8 @@ resolver = "2"
 version = "0.1.0"
 edition = "2021"
 authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
-license = "MIT"
-repository = "https://github.com/Mullassery/pydependencycheck"
+license = "Proprietary"
+repository = "https://github.com/Mullassery/PyDependencyCheck"
 
 [workspace.dependencies]
 petgraph = "0.6"
@@ -29,3 +46,17 @@ tree-sitter-python = "0.20"
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1.35", features = ["full"] }
 pyo3 = { version = "0.21", features = ["extension-module"] }
+
+[dependencies]
+pydep-parser = { path = "crates/pydep-parser" }
+pydep-graph = { path = "crates/pydep-graph" }
+pydep-ast = { path = "crates/pydep-ast" }
+pydep-security = { path = "crates/pydep-security" }
+pyo3.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[profile.release]
+opt-level = 3
+lto = true

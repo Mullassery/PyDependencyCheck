@@ -1,21 +1,44 @@
-MIT License
+PyDependencyCheck License
+========================
 
 Copyright (c) 2024 Georgi Mammen Mullassery
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+TERMS OF USE
+============
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This software is provided free of charge under the following terms:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. GRANT OF LICENSE
+   You are granted a non-exclusive, royalty-free, worldwide license to use, copy,
+   modify, and distribute this software and its documentation, subject to the
+   conditions set forth herein.
+
+2. ATTRIBUTION REQUIREMENT
+   You must include the following attribution in any documentation, code comments,
+   or materials that reference or use this software:
+
+   "Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)"
+
+   Attribution must be maintained in all copies, modifications, and derivative works.
+
+3. DISCLAIMER OF WARRANTY
+   THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER
+   IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+4. LIMITATION OF LIABILITY
+   In no event shall the authors or copyright holders be liable for any special,
+   incidental, indirect, or consequential damages whatsoever (including, without
+   limitation, damages for loss of business profits, business interruption, loss of
+   business information, or any other pecuniary loss) arising out of the use of or
+   inability to use this software, even if the authors have been advised of the
+   possibility of such damages.
+
+5. THIRD-PARTY COMPONENTS
+   This software incorporates open-source components licensed under their respective
+   licenses. See the documentation and source code for details.
+
+For more information, visit: https://github.com/Mullassery/PyDependencyCheck

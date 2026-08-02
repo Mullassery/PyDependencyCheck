@@ -15,6 +15,7 @@ impl DependencyGraph {
         }
     }
 
+    #[pyo3(signature = (name, version=None, is_direct=false))]
     fn add_node(&mut self, name: String, version: Option<String>, is_direct: bool) -> PyResult<()> {
         self.inner.add_node(name, version, is_direct)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))

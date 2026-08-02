@@ -4,7 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/pydependencycheck)](https://pypi.org/project/pydependencycheck)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](./LICENSE)
 [![Tests](https://img.shields.io/badge/tests-21%20passing-green)](./crates)
 
 > **Git Blame + Dependency Graph + Security Scanner + License Auditor + Drift Detector**
@@ -241,7 +241,9 @@ Pre-built wheels are available on PyPI for all platforms.
 
 ## License
 
-MIT License — See [LICENSE](LICENSE) for details
+Proprietary License — Free to use with explicit attribution. See [LICENSE](LICENSE) for details.
+
+**Attribution:** "Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)"
 
 ## Contributing
 

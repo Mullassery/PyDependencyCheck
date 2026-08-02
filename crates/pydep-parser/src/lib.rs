@@ -43,16 +43,16 @@ pub fn parse_file(path: &str) -> ParserResult<Vec<Dependency>> {
         f if f == "setup.py" => {
             setup::parse_setup_py(path)
         }
-        f if f == "setup.cfg" => {
+        "setup.cfg" => {
             setup::parse_setup_cfg(path)
         }
-        f if f == "Pipfile" => {
+        "Pipfile" => {
             Err(ParserError::UnsupportedFormat("Pipfile".to_string()))
         }
-        f if f == "poetry.lock" => {
+        "poetry.lock" => {
             Err(ParserError::UnsupportedFormat("poetry.lock".to_string()))
         }
-        f if f == "uv.lock" => {
+        "uv.lock" => {
             Err(ParserError::UnsupportedFormat("uv.lock".to_string()))
         }
         _ => Err(ParserError::UnknownFileType(filename.to_string())),

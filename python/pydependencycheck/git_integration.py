@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 class BlameInfo:
     """Information about when/who added a dependency"""
+
     def __init__(self):
         self.package: str = ""
         self.commit_hash: str = ""
@@ -102,7 +103,7 @@ class GitIntegration:
                                 info.author = commit.author.name
                                 info.author_email = commit.author.email
                                 info.timestamp = datetime.fromtimestamp(commit.committed_date)
-                                info.message = commit.message.split('\n')[0]
+                                info.message = commit.message.split("\n")[0]
                                 info.file = file_path
                                 info.line_no = len(lines)
                                 return info
@@ -139,14 +140,16 @@ class GitIntegration:
                             content = commit.tree[file_path].data_stream.read().decode()
                             if self._is_package_in_content(package, content):
                                 version = self._extract_version(package, content)
-                                history.append({
-                                    "commit": commit.hexsha[:7],
-                                    "author": commit.author.name,
-                                    "timestamp": datetime.fromtimestamp(commit.committed_date).isoformat(),
-                                    "message": commit.message.split('\n')[0],
-                                    "version": version,
-                                    "file": file_path,
-                                })
+                                history.append(
+                                    {
+                                        "commit": commit.hexsha[:7],
+                                        "author": commit.author.name,
+                                        "timestamp": datetime.fromtimestamp(commit.committed_date).isoformat(),
+                                        "message": commit.message.split("\n")[0],
+                                        "version": version,
+                                        "file": file_path,
+                                    }
+                                )
                         except Exception:
                             continue
 
@@ -195,14 +198,14 @@ class GitIntegration:
 
     def _extract_version(self, package: str, content: str) -> Optional[str]:
         """Extract version of package from content"""
-        for line in content.split('\n'):
+        for line in content.split("\n"):
             if self._is_package_in_line(package, line):
                 # Simple extraction: split on ==, >=, etc.
                 for op in ["==", ">=", "<=", "!=", "~=", ">"]:
                     if op in line:
                         parts = line.split(op)
                         if len(parts) > 1:
-                            version = parts[1].strip().split(',')[0].split(';')[0].strip()
+                            version = parts[1].strip().split(",")[0].split(";")[0].strip()
                             return version
                 return None
         return None
@@ -210,12 +213,12 @@ class GitIntegration:
     def _parse_content(self, content: str) -> List[str]:
         """Parse dependency file content and extract package names"""
         packages = []
-        for line in content.split('\n'):
+        for line in content.split("\n"):
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line or line.startswith("#"):
                 continue
             # Simple extraction of package name
-            name = line.split('==')[0].split('>=')[0].split('[')[0].strip()
-            if name and name.lower() not in ('python', ):
+            name = line.split("==")[0].split(">=")[0].split("[")[0].strip()
+            if name and name.lower() not in ("python",):
                 packages.append(name)
         return packages

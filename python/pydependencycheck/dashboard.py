@@ -40,10 +40,7 @@ class CLIDashboard:
         )
 
         # Header
-        layout["header"].update(Panel(
-            "[bold cyan]📦 PyDependencyCheck Dashboard[/bold cyan]",
-            border_style="cyan"
-        ))
+        layout["header"].update(Panel("[bold cyan]📦 PyDependencyCheck Dashboard[/bold cyan]", border_style="cyan"))
 
         # Main content
         layout["content"].split_row(
@@ -71,11 +68,7 @@ class CLIDashboard:
 
         for dep in deps[:5]:
             dep_type = "📌 Direct" if dep.get("direct") else "📄 Transitive"
-            activity_table.add_row(
-                dep["name"],
-                dep.get("version", "—"),
-                dep_type
-            )
+            activity_table.add_row(dep["name"], dep.get("version", "—"), dep_type)
 
         layout["right"].update(Panel(activity_table, title="Top Dependencies"))
 
@@ -107,14 +100,14 @@ class CLIDashboard:
             table.add_row(
                 "➕ Added",
                 str(len(drift["added"])),
-                ", ".join(drift["added"][:3]) + ("..." if len(drift["added"]) > 3 else "")
+                ", ".join(drift["added"][:3]) + ("..." if len(drift["added"]) > 3 else ""),
             )
 
         if drift["removed"]:
             table.add_row(
                 "➖ Removed",
                 str(len(drift["removed"])),
-                ", ".join(drift["removed"][:3]) + ("..." if len(drift["removed"]) > 3 else "")
+                ", ".join(drift["removed"][:3]) + ("..." if len(drift["removed"]) > 3 else ""),
             )
 
         if drift["upgraded"]:
@@ -122,7 +115,7 @@ class CLIDashboard:
             table.add_row(
                 "📈 Upgraded",
                 str(len(drift["upgraded"])),
-                ", ".join(versions) + ("..." if len(drift["upgraded"]) > 3 else "")
+                ", ".join(versions) + ("..." if len(drift["upgraded"]) > 3 else ""),
             )
 
         if drift["downgraded"]:
@@ -130,7 +123,7 @@ class CLIDashboard:
             table.add_row(
                 "📉 Downgraded",
                 str(len(drift["downgraded"])),
-                ", ".join(versions) + ("..." if len(drift["downgraded"]) > 3 else "")
+                ", ".join(versions) + ("..." if len(drift["downgraded"]) > 3 else ""),
             )
 
         if not drift["changed"]:
@@ -179,13 +172,7 @@ class CLIDashboard:
 
             health_text = self._score_to_rich_text(snapshot.health_score) if snapshot.health_score else "—"
 
-            table.add_row(
-                snapshot.timestamp.strftime("%Y-%m-%d"),
-                str(total),
-                str(direct),
-                health_text,
-                trend
-            )
+            table.add_row(snapshot.timestamp.strftime("%Y-%m-%d"), str(total), str(direct), health_text, trend)
 
             prev_total = total
 
@@ -200,10 +187,22 @@ class CLIDashboard:
 
         factors = [
             ("Overall Health", health_score_obj.score, health_score_obj.rating),
-            ("Vulnerabilities", health_score_obj.vulnerabilities_score, self._get_factor_rating(health_score_obj.vulnerabilities_score)),
-            ("Maintenance", health_score_obj.maintenance_score, self._get_factor_rating(health_score_obj.maintenance_score)),
+            (
+                "Vulnerabilities",
+                health_score_obj.vulnerabilities_score,
+                self._get_factor_rating(health_score_obj.vulnerabilities_score),
+            ),
+            (
+                "Maintenance",
+                health_score_obj.maintenance_score,
+                self._get_factor_rating(health_score_obj.maintenance_score),
+            ),
             ("Quality", health_score_obj.quality_score, self._get_factor_rating(health_score_obj.quality_score)),
-            ("Complexity", health_score_obj.complexity_score, self._get_factor_rating(health_score_obj.complexity_score)),
+            (
+                "Complexity",
+                health_score_obj.complexity_score,
+                self._get_factor_rating(health_score_obj.complexity_score),
+            ),
         ]
 
         for name, score, status in factors:

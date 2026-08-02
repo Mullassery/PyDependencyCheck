@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HealthScore:
     """Overall dependency health score"""
+
     score: int  # 0-100
     rating: str  # Excellent, Good, Fair, Poor, Critical
     vulnerabilities_score: int
@@ -51,10 +52,10 @@ class HealthAnalyzer:
 
         # Weighted average
         total_score = (
-            vuln_score * 0.40 +  # 40% weight - security is critical
-            maintenance_score * 0.30 +  # 30% weight
-            quality_score * 0.20 +  # 20% weight
-            complexity_score * 0.10  # 10% weight
+            vuln_score * 0.40  # 40% weight - security is critical
+            + maintenance_score * 0.30  # 30% weight
+            + quality_score * 0.20  # 20% weight
+            + complexity_score * 0.10  # 10% weight
         )
 
         health_score = int(total_score)
@@ -63,12 +64,8 @@ class HealthAnalyzer:
         rating = self._score_to_rating(health_score)
 
         # Identify issues and recommendations
-        issues = self._identify_issues(
-            vulnerabilities_by_pkg, stale_packages, dead_deps, health_score
-        )
-        recommendations = self._make_recommendations(
-            vulnerabilities_by_pkg, stale_packages, dead_deps, import_analysis
-        )
+        issues = self._identify_issues(vulnerabilities_by_pkg, stale_packages, dead_deps, health_score)
+        recommendations = self._make_recommendations(vulnerabilities_by_pkg, stale_packages, dead_deps, import_analysis)
 
         return HealthScore(
             score=health_score,
@@ -87,14 +84,10 @@ class HealthAnalyzer:
             return 100
 
         critical_count = sum(
-            1 for vulns in vulns_by_pkg.values()
-            if any(v.get("severity") == "CRITICAL" for v in vulns)
+            1 for vulns in vulns_by_pkg.values() if any(v.get("severity") == "CRITICAL" for v in vulns)
         )
 
-        high_count = sum(
-            1 for vulns in vulns_by_pkg.values()
-            if any(v.get("severity") == "HIGH" for v in vulns)
-        )
+        high_count = sum(1 for vulns in vulns_by_pkg.values() if any(v.get("severity") == "HIGH" for v in vulns))
 
         # Deduct points
         score = 100
@@ -171,8 +164,9 @@ class HealthAnalyzer:
         issues = []
 
         # Critical vulnerabilities
-        critical_packages = [pkg for pkg, v_list in vulns.items()
-                            if any(v.get("severity") == "CRITICAL" for v in v_list)]
+        critical_packages = [
+            pkg for pkg, v_list in vulns.items() if any(v.get("severity") == "CRITICAL" for v in v_list)
+        ]
         if critical_packages:
             issues.append(f"🚨 {len(critical_packages)} packages with critical vulnerabilities")
 
@@ -201,8 +195,7 @@ class HealthAnalyzer:
         recommendations = []
 
         # Fix critical vulnerabilities
-        critical = [pkg for pkg, v_list in vulns.items()
-                   if any(v.get("severity") == "CRITICAL" for v in v_list)]
+        critical = [pkg for pkg, v_list in vulns.items() if any(v.get("severity") == "CRITICAL" for v in v_list)]
         if critical:
             recommendations.append(f"Upgrade {critical[0]} to fix critical vulnerability")
 

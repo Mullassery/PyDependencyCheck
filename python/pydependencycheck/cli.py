@@ -36,7 +36,9 @@ def cli():
 @cli.command()
 @click.option("--path", "-p", type=click.Path(exists=True), default=".", help="Project path to scan")
 @click.option("--output", "-o", type=click.Path(), help="Output file path (optional)")
-@click.option("--format", "-f", type=click.Choice(["json", "html", "markdown", "table"]), default="table", help="Output format")
+@click.option(
+    "--format", "-f", type=click.Choice(["json", "html", "markdown", "table"]), default="table", help="Output format"
+)
 @click.option("--save-snapshot", is_flag=True, help="Save scan result to cache")
 def scan(path: str, output: Optional[str], format: str, save_snapshot: bool):
     """Scan a project for dependencies"""
@@ -135,12 +137,7 @@ def list(path: str, limit: int):
             table.add_row("[dim]...[/dim]", "", "", "")
             break
         dep_type = "direct" if dep.get("direct") else "transitive"
-        table.add_row(
-            dep["name"],
-            dep.get("version") or "—",
-            dep_type,
-            Path(dep.get("source", "")).name
-        )
+        table.add_row(dep["name"], dep.get("version") or "—", dep_type, Path(dep.get("source", "")).name)
 
     console.print(table)
     console.print(f"\n[bold]Total:[/bold] {result.direct_count} direct, {result.transitive_count} transitive")

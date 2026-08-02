@@ -27,9 +27,14 @@ logger = logging.getLogger(__name__)
 class TelemetryConfig:
     """Configuration for OpenTelemetry instrumentation"""
 
-    def __init__(self, enabled: bool = False, exporter: str = "stdout",
-                 jaeger_host: str = "localhost", jaeger_port: int = 6831,
-                 otlp_endpoint: str = "http://localhost:4317"):
+    def __init__(
+        self,
+        enabled: bool = False,
+        exporter: str = "stdout",
+        jaeger_host: str = "localhost",
+        jaeger_port: int = 6831,
+        otlp_endpoint: str = "http://localhost:4317",
+    ):
         self.enabled = enabled and HAS_OTEL
         self.exporter = exporter  # "jaeger", "otlp", "prometheus", "stdout"
         self.jaeger_host = jaeger_host
@@ -62,16 +67,12 @@ class TelemetryManager:
                     agent_port=self.config.jaeger_port,
                 )
                 trace.set_tracer_provider(TracerProvider())
-                trace.get_tracer_provider().add_span_processor(
-                    BatchSpanProcessor(jaeger_exporter)
-                )
+                trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(jaeger_exporter))
 
             elif self.config.exporter == "otlp":
                 otlp_exporter = OTLPSpanExporter(endpoint=self.config.otlp_endpoint)
                 trace.set_tracer_provider(TracerProvider())
-                trace.get_tracer_provider().add_span_processor(
-                    BatchSpanProcessor(otlp_exporter)
-                )
+                trace.get_tracer_provider().add_span_processor(BatchSpanProcessor(otlp_exporter))
 
             self.tracer = trace.get_tracer(__name__)
             logger.info(f"Tracing enabled with {self.config.exporter} exporter")
@@ -159,24 +160,18 @@ class TelemetryManager:
         try:
             # Counters
             dep_counter = self.meter.create_counter(
-                "pydep_total_dependencies",
-                description="Total dependencies scanned",
-                unit="1"
+                "pydep_total_dependencies", description="Total dependencies scanned", unit="1"
             )
             dep_counter.add(total_deps)
 
             direct_counter = self.meter.create_counter(
-                "pydep_direct_dependencies",
-                description="Direct dependencies",
-                unit="1"
+                "pydep_direct_dependencies", description="Direct dependencies", unit="1"
             )
             direct_counter.add(direct_deps)
 
             # Gauge for health score
             health_gauge = self.meter.create_gauge(
-                "pydep_health_score",
-                description="Dependency health score (0-100)",
-                unit="1"
+                "pydep_health_score", description="Dependency health score (0-100)", unit="1"
             )
             health_gauge.record(health_score)
 
@@ -190,30 +185,22 @@ class TelemetryManager:
 
         try:
             critical_counter = self.meter.create_counter(
-                "pydep_vulnerabilities_critical",
-                description="Critical vulnerabilities",
-                unit="1"
+                "pydep_vulnerabilities_critical", description="Critical vulnerabilities", unit="1"
             )
             critical_counter.add(critical)
 
             high_counter = self.meter.create_counter(
-                "pydep_vulnerabilities_high",
-                description="High severity vulnerabilities",
-                unit="1"
+                "pydep_vulnerabilities_high", description="High severity vulnerabilities", unit="1"
             )
             high_counter.add(high)
 
             medium_counter = self.meter.create_counter(
-                "pydep_vulnerabilities_medium",
-                description="Medium severity vulnerabilities",
-                unit="1"
+                "pydep_vulnerabilities_medium", description="Medium severity vulnerabilities", unit="1"
             )
             medium_counter.add(medium)
 
             low_counter = self.meter.create_counter(
-                "pydep_vulnerabilities_low",
-                description="Low severity vulnerabilities",
-                unit="1"
+                "pydep_vulnerabilities_low", description="Low severity vulnerabilities", unit="1"
             )
             low_counter.add(low)
 
@@ -227,9 +214,7 @@ class TelemetryManager:
 
         try:
             duration_histogram = self.meter.create_histogram(
-                "pydep_operation_duration_ms",
-                description="Operation duration in milliseconds",
-                unit="ms"
+                "pydep_operation_duration_ms", description="Operation duration in milliseconds", unit="ms"
             )
             duration_histogram.record(duration_ms, {"operation": operation})
 

@@ -13,8 +13,16 @@ logger = logging.getLogger(__name__)
 
 class DriftSnapshot:
     """Represents a dependency snapshot at a point in time"""
-    def __init__(self, snapshot_id: int, project_path: str, timestamp: datetime,
-                 dependencies: Dict[str, Any], graph_hash: str, health_score: Optional[int] = None):
+
+    def __init__(
+        self,
+        snapshot_id: int,
+        project_path: str,
+        timestamp: datetime,
+        dependencies: Dict[str, Any],
+        graph_hash: str,
+        health_score: Optional[int] = None,
+    ):
         self.id = snapshot_id
         self.project_path = project_path
         self.timestamp = timestamp
@@ -38,7 +46,8 @@ class SnapshotStorage:
         cursor = conn.cursor()
 
         # Snapshots: Full dependency trees with metadata
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS snapshots (
                 id INTEGER PRIMARY KEY,
                 project_path TEXT NOT NULL,
@@ -51,10 +60,12 @@ class SnapshotStorage:
                 health_score INTEGER,
                 UNIQUE(project_path, timestamp)
             )
-        """)
+        """
+        )
 
         # Vulnerability cache (7-day TTL)
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS vulnerabilities (
                 id INTEGER PRIMARY KEY,
                 package_name TEXT NOT NULL,
@@ -69,10 +80,12 @@ class SnapshotStorage:
                 last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
                 INDEX(package_name, package_version)
             )
-        """)
+        """
+        )
 
         # Usage analysis
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS usage_analysis (
                 id INTEGER PRIMARY KEY,
                 package_name TEXT NOT NULL,
@@ -83,10 +96,12 @@ class SnapshotStorage:
                 snapshot_id INTEGER REFERENCES snapshots(id),
                 INDEX(package_name, file_path)
             )
-        """)
+        """
+        )
 
         # Blame/history log
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS blame_log (
                 id INTEGER PRIMARY KEY,
                 package_name TEXT NOT NULL,
@@ -98,10 +113,12 @@ class SnapshotStorage:
                 message TEXT,
                 snapshot_id INTEGER REFERENCES snapshots(id)
             )
-        """)
+        """
+        )
 
         # Drift baselines
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS drift_baselines (
                 id INTEGER PRIMARY KEY,
                 project_path TEXT UNIQUE NOT NULL,
@@ -110,13 +127,13 @@ class SnapshotStorage:
                 baseline_snapshot_id INTEGER REFERENCES snapshots(id),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
         conn.commit()
         conn.close()
 
-    def save_snapshot(self, project_path: str, scan_result: Dict[str, Any],
-                     health_score: Optional[int] = None) -> int:
+    def save_snapshot(self, project_path: str, scan_result: Dict[str, Any], health_score: Optional[int] = None) -> int:
         """Save a dependency scan snapshot"""
         deps = scan_result.get("dependencies", [])
         direct_count = sum(1 for d in deps if d.get("direct", False))
@@ -128,20 +145,23 @@ class SnapshotStorage:
         cursor = conn.cursor()
 
         try:
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO snapshots (
                     project_path, graph_json, total_deps, direct_deps, transitive_deps,
                     graph_hash, health_score
                 ) VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                project_path,
-                json.dumps(scan_result),
-                len(deps),
-                direct_count,
-                len(deps) - direct_count,
-                graph_hash,
-                health_score,
-            ))
+            """,
+                (
+                    project_path,
+                    json.dumps(scan_result),
+                    len(deps),
+                    direct_count,
+                    len(deps) - direct_count,
+                    graph_hash,
+                    health_score,
+                ),
+            )
 
             conn.commit()
             snapshot_id = cursor.lastrowid
@@ -160,12 +180,15 @@ class SnapshotStorage:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM snapshots
             WHERE project_path = ?
             ORDER BY timestamp DESC
             LIMIT 1
-        """, (project_path,))
+        """,
+            (project_path,),
+        )
 
         row = cursor.fetchone()
         conn.close()
@@ -187,26 +210,31 @@ class SnapshotStorage:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT * FROM snapshots
             WHERE project_path = ?
             ORDER BY timestamp DESC
             LIMIT ?
-        """, (project_path, limit))
+        """,
+            (project_path, limit),
+        )
 
         rows = cursor.fetchall()
         conn.close()
 
         snapshots = []
         for row in rows:
-            snapshots.append(DriftSnapshot(
-                snapshot_id=row["id"],
-                project_path=row["project_path"],
-                timestamp=datetime.fromisoformat(row["timestamp"]),
-                dependencies=json.loads(row["graph_json"]),
-                graph_hash=row["graph_hash"],
-                health_score=row["health_score"],
-            ))
+            snapshots.append(
+                DriftSnapshot(
+                    snapshot_id=row["id"],
+                    project_path=row["project_path"],
+                    timestamp=datetime.fromisoformat(row["timestamp"]),
+                    dependencies=json.loads(row["graph_json"]),
+                    graph_hash=row["graph_hash"],
+                    health_score=row["health_score"],
+                )
+            )
 
         return snapshots
 
@@ -257,10 +285,13 @@ class SnapshotStorage:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT OR REPLACE INTO drift_baselines (project_path, baseline_name, baseline_snapshot_id)
             VALUES (?, ?, ?)
-        """, (project_path, baseline_name, latest.id))
+        """,
+            (project_path, baseline_name, latest.id),
+        )
 
         conn.commit()
         conn.close()
@@ -274,13 +305,16 @@ class SnapshotStorage:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT s.* FROM snapshots s
             JOIN drift_baselines b ON s.id = b.baseline_snapshot_id
             WHERE b.project_path = ?
             ORDER BY b.created_at DESC
             LIMIT 1
-        """, (project_path,))
+        """,
+            (project_path,),
+        )
 
         row = cursor.fetchone()
         conn.close()
@@ -301,12 +335,15 @@ class SnapshotStorage:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             SELECT id FROM snapshots
             WHERE project_path = ?
             ORDER BY timestamp DESC
             LIMIT -1 OFFSET ?
-        """, (project_path, keep))
+        """,
+            (project_path, keep),
+        )
 
         old_ids = [row[0] for row in cursor.fetchall()]
 
@@ -321,10 +358,7 @@ class SnapshotStorage:
     @staticmethod
     def _compute_graph_hash(dependencies: List[Dict]) -> str:
         """Compute SHA256 hash of dependency graph for drift detection"""
-        graph_str = json.dumps(
-            sorted([d["name"] for d in dependencies]),
-            sort_keys=True
-        )
+        graph_str = json.dumps(sorted([d["name"] for d in dependencies]), sort_keys=True)
         return hashlib.sha256(graph_str.encode()).hexdigest()
 
     @staticmethod

@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 # Try to import Rust backend
 try:
     from . import _pydependencycheck
+
     HAS_RUST_BACKEND = True
 except ImportError:
     HAS_RUST_BACKEND = False
@@ -18,6 +19,7 @@ except ImportError:
 
 class ScanResult:
     """Result of a dependency scan"""
+
     def __init__(self):
         self.dependencies: List[Dict[str, Any]] = []
         self.direct_count: int = 0
@@ -115,13 +117,15 @@ class DependencyScanner:
                 name = parts[0].strip().lower()
                 version = parts[1].strip() if len(parts) > 1 else None
 
-                dependencies.append({
-                    "name": name,
-                    "version": version,
-                    "source": str(file_path.relative_to(self.project_path)),
-                    "direct": True,
-                    "dev": "dev" in file_path.name.lower(),
-                })
+                dependencies.append(
+                    {
+                        "name": name,
+                        "version": version,
+                        "source": str(file_path.relative_to(self.project_path)),
+                        "direct": True,
+                        "dev": "dev" in file_path.name.lower(),
+                    }
+                )
         except Exception as e:
             logger.error(f"Failed to parse {file_path}: {e}")
 
@@ -162,13 +166,15 @@ class DependencyScanner:
                 poetry = data["tool"]["poetry"]
                 for name, version in poetry.get("dependencies", {}).items():
                     if name != "python":
-                        dependencies.append({
-                            "name": name.lower(),
-                            "version": str(version) if version else None,
-                            "source": str(file_path.relative_to(self.project_path)),
-                            "direct": True,
-                            "dev": False,
-                        })
+                        dependencies.append(
+                            {
+                                "name": name.lower(),
+                                "version": str(version) if version else None,
+                                "source": str(file_path.relative_to(self.project_path)),
+                                "direct": True,
+                                "dev": False,
+                            }
+                        )
 
         except Exception as e:
             logger.error(f"Failed to parse {file_path}: {e}")
@@ -185,21 +191,25 @@ class DependencyScanner:
                 if op in req:
                     name = req.split(op)[0].strip()
                     version = req.split(op)[1].strip().split(",")[0].strip()
-                    return [{
-                        "name": name.lower().replace("_", "-"),
-                        "version": version,
-                        "source": str(file_path.relative_to(self.project_path)),
-                        "direct": True,
-                        "dev": dev,
-                    }]
+                    return [
+                        {
+                            "name": name.lower().replace("_", "-"),
+                            "version": version,
+                            "source": str(file_path.relative_to(self.project_path)),
+                            "direct": True,
+                            "dev": dev,
+                        }
+                    ]
 
-            return [{
-                "name": req.lower().replace("_", "-"),
-                "version": None,
-                "source": str(file_path.relative_to(self.project_path)),
-                "direct": True,
-                "dev": dev,
-            }]
+            return [
+                {
+                    "name": req.lower().replace("_", "-"),
+                    "version": None,
+                    "source": str(file_path.relative_to(self.project_path)),
+                    "direct": True,
+                    "dev": dev,
+                }
+            ]
         except Exception as e:
             logger.error(f"Failed to parse requirement '{req}': {e}")
             return []
@@ -231,8 +241,10 @@ class DependencyScanner:
         if HAS_RUST_BACKEND:
             result.graph_data = self._build_graph()
 
-        logger.info(f"Scan complete: {len(self.parsed_deps)} dependencies "
-                   f"({result.direct_count} direct, {result.transitive_count} transitive)")
+        logger.info(
+            f"Scan complete: {len(self.parsed_deps)} dependencies "
+            f"({result.direct_count} direct, {result.transitive_count} transitive)"
+        )
 
         return result
 

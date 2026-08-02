@@ -88,23 +88,16 @@ class GitHubActionsReporter:
         should_fail = False
 
         if critical_vulns > 0:
-            self._output_annotation(
-                "error",
-                f"CI failing: {critical_vulns} critical vulnerabilities detected"
-            )
+            self._output_annotation("error", f"CI failing: {critical_vulns} critical vulnerabilities detected")
             should_fail = True
 
         if health_score < 50:
-            self._output_annotation(
-                "error",
-                f"CI failing: Health score {health_score}/100 below threshold of 50"
-            )
+            self._output_annotation("error", f"CI failing: Health score {health_score}/100 below threshold of 50")
             should_fail = True
 
         if dead_deps_count > dead_deps_threshold:
             self._output_annotation(
-                "error",
-                f"CI failing: {dead_deps_count} unused deps exceed threshold of {dead_deps_threshold}"
+                "error", f"CI failing: {dead_deps_count} unused deps exceed threshold of {dead_deps_threshold}"
             )
             should_fail = True
 

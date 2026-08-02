@@ -12,9 +12,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class VulnerabilityReport:
     """Report on detected vulnerabilities"""
+
     package: str
     version: Optional[str]
-    vulnerabilities: List['Vulnerability'] = None
+    vulnerabilities: List["Vulnerability"] = None
     risk_score: int = 0
     rating: str = "unknown"
 
@@ -26,6 +27,7 @@ class VulnerabilityReport:
 @dataclass
 class Vulnerability:
     """Single CVE/vulnerability"""
+
     id: str
     summary: str
     severity: str  # CRITICAL, HIGH, MEDIUM, LOW
@@ -105,11 +107,7 @@ class VulnerabilityAnalyzer:
                     affected_versions=vuln_data.get("affected", []),
                     fixed_version=vuln_data.get("fixed_version"),
                     published=vuln_data.get("published"),
-                    references=[
-                        ref.get("url")
-                        for ref in vuln_data.get("references", [])
-                        if ref.get("url")
-                    ],
+                    references=[ref.get("url") for ref in vuln_data.get("references", []) if ref.get("url")],
                 )
                 vulns.append(vuln)
 
@@ -195,21 +193,23 @@ class VulnerabilityAnalyzer:
 
             if report.vulnerabilities:
                 results["packages_with_vulns"] += 1
-                results["packages"].append({
-                    "name": package,
-                    "version": version,
-                    "vulnerabilities": [
-                        {
-                            "id": v.id,
-                            "summary": v.summary,
-                            "severity": v.severity,
-                            "cvss_score": v.cvss_score,
-                        }
-                        for v in report.vulnerabilities
-                    ],
-                    "risk_score": report.risk_score,
-                    "rating": report.rating,
-                })
+                results["packages"].append(
+                    {
+                        "name": package,
+                        "version": version,
+                        "vulnerabilities": [
+                            {
+                                "id": v.id,
+                                "summary": v.summary,
+                                "severity": v.severity,
+                                "cvss_score": v.cvss_score,
+                            }
+                            for v in report.vulnerabilities
+                        ],
+                        "risk_score": report.risk_score,
+                        "rating": report.rating,
+                    }
+                )
 
                 # Count by severity
                 for vuln in report.vulnerabilities:

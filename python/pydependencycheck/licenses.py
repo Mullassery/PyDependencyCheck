@@ -9,22 +9,27 @@ logger = logging.getLogger(__name__)
 
 # SPDX license categories
 PERMISSIVE_LICENSES = {
-    "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause",
-    "ISC", "MPL-2.0", "Python-2.0", "WTFPL", "Zlib", "CC0-1.0"
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MPL-2.0",
+    "Python-2.0",
+    "WTFPL",
+    "Zlib",
+    "CC0-1.0",
 }
 
-COPYLEFT_LICENSES = {
-    "GPL-2.0", "GPL-3.0", "LGPL-2.1", "LGPL-3.0", "AGPL-3.0"
-}
+COPYLEFT_LICENSES = {"GPL-2.0", "GPL-3.0", "LGPL-2.1", "LGPL-3.0", "AGPL-3.0"}
 
-RESTRICTED_LICENSES = {
-    "AGPL-3.0", "GPL-3.0", "GPL-2.0"  # Restrictive for proprietary software
-}
+RESTRICTED_LICENSES = {"AGPL-3.0", "GPL-3.0", "GPL-2.0"}  # Restrictive for proprietary software
 
 
 @dataclass
 class LicenseInfo:
     """License information for a package"""
+
     package: str
     version: Optional[str] = None
     licenses: List[str] = None
@@ -101,7 +106,7 @@ class LicenseAnalyzer:
             version=version_used,
             licenses=licenses,
             primary_license=licenses[0] if licenses else None,
-            is_spdx_valid=any(self._is_spdx_license(l) for l in licenses)
+            is_spdx_valid=any(self._is_spdx_license(l) for l in licenses),
         )
 
         return result
@@ -204,11 +209,13 @@ class LicenseAnalyzer:
             version = dep.get("version")
 
             info = self.analyze_package(package_name, version)
-            results["packages"].append({
-                "name": package_name,
-                "licenses": info.licenses,
-                "risk": info.risk_level,
-            })
+            results["packages"].append(
+                {
+                    "name": package_name,
+                    "licenses": info.licenses,
+                    "risk": info.risk_level,
+                }
+            )
 
             if info.risk_level == "permissive":
                 results["permissive"] += 1
@@ -244,8 +251,6 @@ class DeadDependencyDetector:
         }
 
         if definitely_dead:
-            result["recommendations"].append(
-                f"Consider removing {len(definitely_dead)} packages that are not imported"
-            )
+            result["recommendations"].append(f"Consider removing {len(definitely_dead)} packages that are not imported")
 
         return result

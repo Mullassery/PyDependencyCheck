@@ -12,6 +12,7 @@ try:
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.asymmetric import rsa, padding
     from cryptography.hazmat.primitives import serialization
+
     HAS_CRYPTO = True
 except ImportError:
     HAS_CRYPTO = False
@@ -42,11 +43,7 @@ class SBOMGenerator:
             # Add evidence of usage
             if dep.get("source"):
                 component["evidence"] = {
-                    "identity": {
-                        "field": "purl",
-                        "confidence": 100,
-                        "methods": [{"technique": "manifest"}]
-                    }
+                    "identity": {"field": "purl", "confidence": 100, "methods": [{"technique": "manifest"}]}
                 }
 
             components.append(component)
@@ -69,7 +66,7 @@ class SBOMGenerator:
                     "type": "application",
                     "name": project_name,
                     "version": project_version,
-                }
+                },
             },
             "components": components,
         }
@@ -104,11 +101,13 @@ class SBOMGenerator:
 
             # Add relationship
             rel_type = "DEPENDS_ON"
-            relationships.append({
-                "spdxElementId": project_id,
-                "relatedSpdxElement": pkg_id,
-                "relationshipType": rel_type,
-            })
+            relationships.append(
+                {
+                    "spdxElementId": project_id,
+                    "relatedSpdxElement": pkg_id,
+                    "relationshipType": rel_type,
+                }
+            )
 
         sbom = {
             "spdxVersion": "SPDX-2.3",
@@ -129,14 +128,16 @@ class SBOMGenerator:
                     "downloadLocation": "NOASSERTION",
                     "filesAnalyzed": False,
                 }
-            ] + packages,
+            ]
+            + packages,
             "relationships": [
                 {
                     "spdxElementId": document_id,
                     "relatedSpdxElement": project_id,
                     "relationshipType": "DESCRIBES",
                 }
-            ] + relationships,
+            ]
+            + relationships,
         }
 
         return sbom
@@ -225,10 +226,7 @@ class SBOMSigner:
 
             signature = self.private_key.sign(
                 sbom_bytes,
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH
-                ),
+                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                 hashes.SHA256(),
             )
 
@@ -273,10 +271,7 @@ class SBOMSigner:
             public_key.verify(
                 signature,
                 sbom_bytes,
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH
-                ),
+                padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
                 hashes.SHA256(),
             )
 

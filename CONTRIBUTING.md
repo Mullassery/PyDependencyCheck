@@ -12,8 +12,8 @@ Thanks for your interest in contributing! This guide covers development setup, t
 ### Clone & Build
 
 ```bash
-git clone https://github.com/Mullassery/pydependencycheck
-cd pydependencycheck
+git clone https://github.com/Mullassery/PyDependencyCheck
+cd PyDependencyCheck
 
 # Create virtual environment
 python -m venv venv
@@ -131,10 +131,10 @@ Describe what you want to build and why.
 
 ## Getting Help
 
-- **Slack:** [Join our community](https://community.example.com) (when available)
-- **Discussions:** [GitHub Discussions](https://github.com/Mullassery/pydependencycheck/discussions)
-- **Issues:** [Report a bug](https://github.com/Mullassery/pydependencycheck/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/Mullassery/PyDependencyCheck/discussions)
+- **Issues:** [Report a bug](https://github.com/Mullassery/PyDependencyCheck/issues)
+- **Email:** mullassery@gmail.com
 
 ---
 
-**Contributor Agreement:** By submitting code, you agree it will be licensed under MIT.
+**Contributor Agreement:** By submitting code, you agree it will be licensed under the Proprietary License. See LICENSE for details.

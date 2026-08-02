@@ -358,25 +358,25 @@ with telemetry.trace_scan("/path/to/project") as span:
 
 ## Compliance Features
 
-✅ **SBOM Support**: CycloneDX + SPDX compliance  
-✅ **Cryptographic Signing**: RSA-SHA256 authentication  
-✅ **Audit Trail**: Git-style blame for every dependency  
-✅ **Drift Detection**: Track changes over time  
-✅ **Observability**: OTEL instrumentation  
-✅ **CI/CD Integration**: GitHub Actions ready  
-✅ **Health Scoring**: Quantified risk assessment  
-✅ **Vulnerability Tracking**: OSV integration  
-✅ **License Compliance**: SPDX classification  
+ **SBOM Support**: CycloneDX + SPDX compliance  
+ **Cryptographic Signing**: RSA-SHA256 authentication  
+ **Audit Trail**: Git-style blame for every dependency  
+ **Drift Detection**: Track changes over time  
+ **Observability**: OTEL instrumentation  
+ **CI/CD Integration**: GitHub Actions ready  
+ **Health Scoring**: Quantified risk assessment  
+ **Vulnerability Tracking**: OSV integration  
+ **License Compliance**: SPDX classification  
 
 ---
 
 ## Summary
 
 PyDependencyCheck is now **production-ready** with:
-- ✅ All 5 phases implemented
-- ✅ Enterprise security features
-- ✅ Compliance tooling (SBOM, signing)
-- ✅ Observability (OTEL)
-- ✅ CI/CD integration (GitHub Actions)
-- ✅ CLI-only (no web dependencies)
-- ✅ 21+ Rust tests passing
+-  All 5 phases implemented
+-  Enterprise security features
+-  Compliance tooling (SBOM, signing)
+-  Observability (OTEL)
+-  CI/CD integration (GitHub Actions)
+-  CLI-only (no web dependencies)
+-  21+ Rust tests passing

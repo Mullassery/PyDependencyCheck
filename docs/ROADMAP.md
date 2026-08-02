@@ -16,12 +16,12 @@ v1.0.0 ━━━━━━━ Enterprise Dashboard & Hardening (6+ weeks)
 **Status:** 🟢 IN PROGRESS (Scaffolding complete)
 
 ### Features
-- ✅ Dependency parsing (requirements.txt, pyproject.toml, setup.py)
-- ✅ Dependency graph construction (petgraph DiGraph)
-- ✅ Git blame per dependency (who added it, when)
-- ✅ Interactive HTML report with D3.js
-- ✅ JSON export for CI/CD
-- ✅ Basic CLI (scan, list, why, trace, blame)
+-  Dependency parsing (requirements.txt, pyproject.toml, setup.py)
+-  Dependency graph construction (petgraph DiGraph)
+-  Git blame per dependency (who added it, when)
+-  Interactive HTML report with D3.js
+-  JSON export for CI/CD
+-  Basic CLI (scan, list, why, trace, blame)
 
 ### Deliverables
 | Component | Status | Effort | Owner |

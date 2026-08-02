@@ -1,142 +1,166 @@
 # PyDependencyCheck
 
-**Production-Grade Dependency Intelligence & Governance Platform for Python**
+Production-grade dependency intelligence platform for Python. Answers the critical questions about your supply chain: why dependencies exist, who introduced them, whether they're actually used, if they're safe, and how they're changing over time.
 
 [![PyPI](https://img.shields.io/pypi/v/pydependencycheck)](https://pypi.org/project/pydependencycheck)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](./LICENSE)
-[![Tests](https://img.shields.io/badge/tests-21%20passing-green)](./crates)
+[![Tests Passing](https://img.shields.io/badge/tests-21%20passing-success)](./crates)
 
-> **Git Blame + Dependency Graph + Security Scanner + License Auditor + Drift Detector**
+## What Problem Does It Solve?
 
-PyDependencyCheck answers the questions that matter:
+Modern Python projects often contain dozens of dependencies, many of which are transitive. You need answers to questions like:
 
-🤔 **Why** is this dependency installed?  
-🔍 **Who** introduced it? (with git blame)  
-✅ **Is it actually being used**?  
-🚨 **Is it safe** (vulnerabilities, maintenance)?  
-⚖️ **What licenses** does it bring?  
-🗑️ **What happens if we remove it**?  
-📊 **How much bloat** does it create?  
-📈 **How are dependencies trending** over time?  
+- **Provenance**: Who added this dependency? When? Why?
+- **Usage**: Is this package actually being used in the codebase?
+- **Risk**: Does it have vulnerabilities? Is it actively maintained? What licenses does it bring?
+- **Change**: What's changed in dependencies over time? Has someone snuck in a new package?
+- **Compliance**: Can I generate an SBOM? Can I verify supply chain integrity?
+
+Traditional tools handle one or two of these. PyDependencyCheck handles all of them.
 
 ## Installation
 
 ```bash
-# Install from PyPI (wheels only)
 pip install pydependencycheck
+```
 
-# With optional enterprise features
+For enterprise features (OpenTelemetry, SBOM signing):
+
+```bash
 pip install "pydependencycheck[otel,sbom]"
 ```
 
-**Wheels available for:**
-- Linux (manylinux2014) - x86_64
-- macOS (10.9+) - Intel & Apple Silicon (arm64)
-- Windows - x86_64
-
-Pre-built wheels are available on PyPI for all platforms.
+Wheels available for Linux (manylinux2014), macOS (Intel and Apple Silicon), and Windows.
 
 ## Quick Start
 
+Scan your project:
+
 ```bash
-# Scan your project (auto-detects requirements.txt, pyproject.toml, etc.)
 pydependencycheck scan .
+```
 
-# Explain why a dependency exists (with git blame)
+Explain a specific dependency:
+
+```bash
 pydependencycheck why requests
+```
 
-# Show dependency lineage
-pydependencycheck trace urllib3
+Check overall health:
 
-# Check overall health (0-100 score)
+```bash
 pydependencycheck health
+```
 
-# Save a baseline and detect drift
+Detect changes from a baseline:
+
+```bash
 pydependencycheck snapshot --save
-pydependencycheck history --days 30
 pydependencycheck drift --baseline main
+```
 
-# Export SBOM for compliance
+Export an SBOM for compliance:
+
+```bash
 pydependencycheck export --format cyclonedx --output sbom.json
 ```
 
-## Features
+## Core Features
 
-### ✅ Complete (v0.1.0 - Production Ready)
+**Dependency Analysis**
+- Parses 8+ formats: requirements.txt, pyproject.toml, setup.py, poetry, uv, and more
+- Builds complete dependency graphs with cycle detection
+- Computes all standard graph algorithms: transitive closure, topological sort, path finding
+- Identifies both direct and transitive dependencies
 
-**Core Analysis**
-- Automatic detection of 8+ dependency formats (requirements.txt, pyproject.toml, setup.py, poetry, uv, etc.)
-- Complete dependency graph with 10+ algorithms (transitive closure, cycle detection, topological sort)
-- Git blame per dependency (who added it, when, commit message)
-- Impact analysis (what breaks if removed?)
+**Provenance & Blame**
+- Git blame integration: see who added each dependency, when, and the commit message
+- Complete change history and traceability
+- Baseline snapshots stored in SQLite for auditing
 
-**Code-Level Intelligence**
-- Python AST parsing to detect actual imports (direct, from, dynamic)
-- Dead dependency detection with confidence levels (HIGH/MEDIUM/LOW)
-- Usage tracking and frequency analysis
-- Stdlib and dev-tool filtering
+**Code Intelligence**
+- Python AST parsing via tree-sitter to detect actual imports
+- Dead dependency detection with confidence levels (high/medium/low)
+- Import frequency analysis
+- Automatic filtering of stdlib and dev-only tools
 
 **License Compliance**
-- SPDX classification (90+ known licenses)
-- License compatibility checking
-- Risk levels (permissive, copyleft, restricted)
-- Conflict detection
+- SPDX classification for 90+ known licenses
+- Compatibility checking across your dependency tree
+- Automatic conflict detection
+- Risk level assessment (permissive, copyleft, restricted)
 
-**Security & Risk**
-- OSV vulnerability database integration
+**Security & Vulnerability Scanning**
+- OSV database integration for real-time vulnerability data
 - CVSS score classification
 - Transitive vulnerability propagation
-- Multi-factor health score (0-100):
-  - Vulnerabilities (40%)
-  - Maintenance (30%)
-  - Quality/Dead deps (20%)
-  - Complexity (10%)
+- Multi-factor health scoring (vulnerabilities, maintenance, quality, complexity)
 
-**Drift & History**
-- SQLite snapshot storage (~/.pydep/cache.db)
-- Historical timeline tracking
-- Baseline comparison and detection
-- Added/removed/upgraded/downgraded tracking
-- Temporal queries and trends
+**Drift & History Tracking**
+- Save snapshots to detect what changed over time
+- Compare against named baselines
+- Track added/removed/upgraded/downgraded packages
+- Temporal trend analysis
 
-**Enterprise Features**
-- CLI Dashboard (Rich TUI) with real-time monitoring
-- OpenTelemetry instrumentation (Jaeger, OTLP, Prometheus)
-- SBOM generation (CycloneDX 1.4, SPDX JSON)
-- Cryptographic signing (RSA-SHA256)
-- GitHub Actions CI/CD integration
-- Failure criteria (critical vulns, low health, drift alerts)
+**Enterprise Observability**
+- OpenTelemetry instrumentation (Jaeger, OTLP, Prometheus backends)
+- SBOM generation in CycloneDX and SPDX formats
+- Cryptographic SBOM signing and verification (RSA-SHA256)
+- GitHub Actions CI/CD integration with annotations and failure gates
+- CLI dashboard with real-time monitoring
 
-**Reporting**
-- Table format (Rich terminal UI)
-- JSON (CI/CD friendly)
-- HTML (interactive with D3.js)
-- Markdown (GitHub-friendly)
-- CycloneDX SBOM (compliance standard)
+## Comparison with Similar Tools
 
-### CLI Commands (10+ available)
+| Feature | PyDependencyCheck | pip-audit | Safety | Dependabot |
+|---------|---|---|---|---|
+| Vulnerability scanning | Yes (OSV) | Yes (PyPI) | Yes (Safety DB) | Yes (GitHub) |
+| License analysis | Yes | No | No | No |
+| Dead dependency detection | Yes | No | No | No |
+| Git provenance tracking | Yes | No | No | No |
+| Dependency drift detection | Yes | No | No | No |
+| Complete graph algorithms | Yes | No | No | No |
+| Health scoring | Yes (4-factor) | No | No | Limited |
+| SBOM with signing | Yes | No | No | Limited |
+| OTEL instrumentation | Yes | No | No | No |
+| CLI dashboard | Yes | No | No | No |
+| Import tracking | Yes | No | No | No |
 
-```bash
-pydependencycheck scan [--path PATH] [--format FORMAT] [--output FILE]
-pydependencycheck list [--path PATH] [--limit N]
-pydependencycheck why PACKAGE [--path PATH]
-pydependencycheck trace PACKAGE [--path PATH]
-pydependencycheck health [--path PATH]
-pydependencycheck snapshot [--path PATH] [--save]
-pydependencycheck history [--path PATH] [--days N]
-pydependencycheck drift [--path PATH] [--baseline NAME]
-pydependencycheck export [--format FORMAT] [--output FILE]
+Key differentiators:
+
+- **Git-aware**: Traces each dependency back to who added it, when, and why (from commit messages)
+- **Code-aware**: Uses AST parsing to detect what's actually imported, not just what's declared
+- **Comprehensive scoring**: 4-factor health metric combining security, maintenance, code quality, and complexity
+- **Temporal analysis**: Track dependencies as they evolve; catch unwanted changes immediately
+- **Enterprise features**: SBOM signing, OTEL tracing, GitHub Actions integration all included
+- **Fast**: Rust-based core provides 10-100x speedup on graph operations
+
+## CLI Commands
+
+```
+pydependencycheck scan           # Full project scan with auto-detection
+pydependencycheck list           # Browse all dependencies
+pydependencycheck why PACKAGE    # Explain why a package is installed
+pydependencycheck trace PACKAGE  # Show dependency lineage (what depends on it)
+pydependencycheck health         # Display health score and breakdown
+pydependencycheck snapshot       # Manage snapshots and baselines
+pydependencycheck history        # View trends over time
+pydependencycheck drift          # Detect changes from baseline
+pydependencycheck export         # Generate SBOMs or other reports
 ```
 
-## GitHub Actions Integration
+All commands support multiple output formats: table, JSON, HTML, and Markdown.
+
+## GitHub Actions Example
+
+Integrate dependency checking into your CI/CD:
 
 ```yaml
 name: Dependency Check
 on: [push, pull_request]
 
 jobs:
-  dependency-check:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -145,7 +169,6 @@ jobs:
           python-version: '3.11'
       
       - run: pip install pydependencycheck
-      
       - run: pydependencycheck scan . --save-snapshot
       - run: pydependencycheck health
       - run: pydependencycheck drift --baseline main
@@ -157,104 +180,66 @@ jobs:
           path: sbom.json
 ```
 
-## Architecture
-
-```
-Rust Core (High-Performance)
-├── pydep-parser    → PEP 508, TOML parsing
-├── pydep-graph     → petgraph DAG, algorithms
-├── pydep-ast       → tree-sitter Python analysis
-├── pydep-security  → OSV integration, scoring
-└── pydep-py        → PyO3 bindings
-
-Python Layer (User-Friendly)
-├── cli.py          → Click commands
-├── dashboard.py    → Rich CLI dashboard
-├── telemetry.py    → OTEL instrumentation
-├── sbom.py         → SBOM generation
-├── reporters.py    → JSON/HTML/Markdown/SBOM
-└── storage.py      → SQLite snapshots
-```
-
-## Comparison with Similar Tools
-
-| Feature | PyDependencyCheck | pip-audit | Safety | Dependabot |
-|---------|-------------------|-----------|--------|-----------|
-| **Vulnerability Scanning** | ✅ OSV | ✅ PyPI | ✅ Safety DB | ✅ GitHub |
-| **License Analysis** | ✅ SPDX | ❌ | ❌ | ❌ |
-| **Dead Dependency Detection** | ✅ AST-based | ❌ | ❌ | ❌ |
-| **Git Blame/Provenance** | ✅ Git history | ❌ | ❌ | ❌ |
-| **Drift Tracking** | ✅ Snapshots | ❌ | ❌ | ❌ |
-| **Dependency Graph** | ✅ Complete | ❌ | ❌ | ❌ |
-| **Health Scoring** | ✅ Multi-factor | ❌ | ❌ | ⚠️ Limited |
-| **SBOM Generation** | ✅ CycloneDX/SPDX | ⚠️ Basic | ❌ | ⚠️ Limited |
-| **OTEL Support** | ✅ Full | ❌ | ❌ | ❌ |
-| **CLI Dashboard** | ✅ Rich TUI | ⚠️ Basic | ⚠️ Basic | ❌ |
-| **Usage Analysis** | ✅ Import tracking | ❌ | ❌ | ❌ |
-
-**Key Differentiators:**
-- **Git-aware**: Tells you WHO added each dependency, WHEN, and WHY (commit message)
-- **Code-intelligent**: Detects actual usage via AST parsing (not just listed)
-- **Comprehensive scoring**: 4-factor health metric (vulnerabilities, maintenance, quality, complexity)
-- **Temporal analysis**: Track dependency trends over time with drift detection
-- **Enterprise-ready**: OTEL observability, SBOM signing, GitHub Actions integration
-- **Fast**: Rust core provides 10-100x speedup on graph operations
+The tool automatically annotates pull requests with warnings for new vulnerabilities and drift detection.
 
 ## Performance
 
-| Operation | Speed |
-|-----------|-------|
+| Operation | Typical Time |
+|-----------|---|
 | Parse 500 dependencies | <500ms |
-| Build graph | <100ms |
+| Build dependency graph | <100ms |
 | Scan 100 Python files | <1s |
 | Full project scan | <5s |
-| OSV query (10 packages) | <2s |
+| OSV lookup (10 packages) | <2s |
 
-## Testing & Quality
+## Technical Details
 
-- ✅ **21 Rust tests** (parser, graph algorithms, scoring)
-- ✅ **Python integration** tested with real projects
-- ✅ **Multi-platform** CI/CD (Linux, macOS, Windows)
-- ✅ **Type-safe** Rust core, Pydantic validation in Python
+**Built with**: Rust core (for performance) + Python CLI (for usability)
+
+**Rust crates**: petgraph for DAG algorithms, tree-sitter for Python parsing, pyo3 for Python bindings, reqwest for HTTP
+
+**Python dependencies**: click for CLI, pydantic for validation, gitpython for git integration, rich for terminal UI
+
+**Testing**: 21 Rust unit tests + integration testing on real projects
+
+**Distribution**: Wheels only (no source distribution) for security and reliability
 
 ## Documentation
 
-- **[PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)** — Complete overview & feature list
-- **[PHASE_4_5_FEATURES.md](PHASE_4_5_FEATURES.md)** — Enterprise features guide
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — System design & internals
-- **[docs/ROADMAP.md](docs/ROADMAP.md)** — Feature roadmap & timeline
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Development setup & contribution guide
+- [Complete Feature Overview](PROJECT_SUMMARY.md) - All features with examples
+- [Enterprise Features Guide](PHASE_4_5_FEATURES.md) - OTEL, SBOM signing, GitHub Actions
+- [Roadmap](docs/ROADMAP.md) - Future features and timeline
+- [Contributing Guide](CONTRIBUTING.md) - How to set up development environment
 
-## Distribution
+## Use Cases
 
-This package is **wheels-only** for maximum compatibility and speed.
+**Security Teams**: Continuously monitor dependencies for vulnerabilities, get alerts on new CVEs, verify supply chain integrity via SBOM signing
 
-**Supported Python versions:** 3.8, 3.9, 3.10, 3.11, 3.12+
+**Compliance Teams**: Generate compliance-ready SBOMs, track license obligations, detect license conflicts before they become legal issues
 
-**Supported platforms:**
-- Linux x86_64 (manylinux2014)
-- macOS x86_64 (10.9+)
-- macOS arm64 (M1/M2+)
-- Windows x86_64
+**Platform Teams**: Govern what packages teams can use, detect and remove dead dependencies, catch dependency bloat in CI/CD
 
-Pre-built wheels are available on PyPI for all platforms.
+**DevOps**: Integrate security scanning into pipelines, fail builds on critical vulnerabilities, detect suspicious dependency changes
+
+**Development Teams**: Understand dependencies, remove unused packages, stay up-to-date on security issues
+
+## Requirements
+
+Python 3.8+ on Linux (x86_64), macOS (Intel/ARM), or Windows (x86_64).
 
 ## License
 
-Proprietary License — Free to use with explicit attribution. See [LICENSE](LICENSE) for details.
+Proprietary License - Free to use with explicit attribution. See [LICENSE](LICENSE) for details.
 
-**Attribution:** "Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)"
-
-## Contributing
-
-Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and guidelines.
+When using PyDependencyCheck, include this attribution:
+> Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)
 
 ## Support
 
-- **GitHub Issues:** [Report bugs](https://github.com/Mullassery/PyDependencyCheck/issues)
-- **GitHub Discussions:** [Ask questions](https://github.com/Mullassery/PyDependencyCheck/discussions)
-- **Email:** mullassery@gmail.com
+Report issues: https://github.com/Mullassery/PyDependencyCheck/issues
+Ask questions: https://github.com/Mullassery/PyDependencyCheck/discussions
+Email: mullassery@gmail.com
 
 ---
 
-**PyDependencyCheck v0.1.0** — Production-ready dependency intelligence platform. All 5 development phases complete.
+PyDependencyCheck v0.1.0 - Production ready. All features complete.

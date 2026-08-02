@@ -1,0 +1,8 @@
+requests==2.32.0
+flask>=2.0.0,<3.0.0
+django[async]>=3.2
+pytest-cov>=4.0.0
+black==23.12.1
+# Comment: development tools
+ruff>=0.1.0
+mypy>=1.0.0

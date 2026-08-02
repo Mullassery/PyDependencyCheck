@@ -21,7 +21,7 @@ pub struct ImportInfo {
     pub import_type: ImportType,
 }
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, Hash)]
 pub enum ImportType {
     Direct,      // import module
     From,        // from module import name

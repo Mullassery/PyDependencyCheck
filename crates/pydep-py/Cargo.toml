@@ -1,0 +1,25 @@
+[package]
+name = "pydep-py"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "_pydependencycheck"
+crate-type = ["cdylib"]
+
+[dependencies]
+pydep-parser = { path = "../pydep-parser" }
+pydep-graph = { path = "../pydep-graph" }
+pydep-ast = { path = "../pydep-ast" }
+pydep-security = { path = "../pydep-security" }
+pyo3.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[profile.release]
+opt-level = 3
+lto = true

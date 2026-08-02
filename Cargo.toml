@@ -1,0 +1,31 @@
+[workspace]
+members = [
+    "crates/pydep-parser",
+    "crates/pydep-graph",
+    "crates/pydep-ast",
+    "crates/pydep-security",
+    "crates/pydep-py",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/Mullassery/pydependencycheck"
+
+[workspace.dependencies]
+petgraph = "0.6"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+regex = "1.10"
+thiserror = "1.0"
+tracing = "0.1"
+rayon = "1.8"
+tree-sitter = "0.20"
+tree-sitter-python = "0.20"
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1.35", features = ["full"] }
+pyo3 = { version = "0.21", features = ["extension-module"] }

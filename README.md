@@ -8,6 +8,7 @@ Production-grade dependency intelligence platform for Python. Answers the critic
 [![Tests Passing](https://img.shields.io/badge/tests-21%20passing-success)](./crates)
 
 ## What Problem Does It Solve?
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 Modern Python projects often contain dozens of dependencies, many of which are transitive. You need answers to questions like:
 
@@ -20,6 +21,7 @@ Modern Python projects often contain dozens of dependencies, many of which are t
 Traditional tools handle one or two of these. PyDependencyCheck handles all of them.
 
 ## Installation
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 ```bash
 pip install pydependencycheck
@@ -34,6 +36,7 @@ pip install "pydependencycheck[otel,sbom]"
 Wheels available for Linux (manylinux2014), macOS (Intel and Apple Silicon), and Windows.
 
 ## Quick Start
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 Scan your project:
 
@@ -67,6 +70,7 @@ pydependencycheck export --format cyclonedx --output sbom.json
 ```
 
 ## Core Features
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 **Dependency Analysis**
 - Parses 8+ formats: requirements.txt, pyproject.toml, setup.py, poetry, uv, and more
@@ -111,6 +115,7 @@ pydependencycheck export --format cyclonedx --output sbom.json
 - CLI dashboard with real-time monitoring
 
 ## Comparison with Similar Tools
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 | Feature | PyDependencyCheck | pip-audit | Safety | Dependabot |
 |---------|---|---|---|---|
@@ -136,6 +141,7 @@ Key differentiators:
 - **Fast**: Rust-based core provides 10-100x speedup on graph operations
 
 ## CLI Commands
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 ```
 pydependencycheck scan           # Full project scan with auto-detection
@@ -152,6 +158,7 @@ pydependencycheck export         # Generate SBOMs or other reports
 All commands support multiple output formats: table, JSON, HTML, and Markdown.
 
 ## GitHub Actions Example
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 Integrate dependency checking into your CI/CD:
 
@@ -183,6 +190,7 @@ jobs:
 The tool automatically annotates pull requests with warnings for new vulnerabilities and drift detection.
 
 ## Performance
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 | Operation | Typical Time |
 |-----------|---|
@@ -193,6 +201,7 @@ The tool automatically annotates pull requests with warnings for new vulnerabili
 | OSV lookup (10 packages) | <2s |
 
 ## Technical Details
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 **Built with**: Rust core (for performance) + Python CLI (for usability)
 
@@ -205,6 +214,7 @@ The tool automatically annotates pull requests with warnings for new vulnerabili
 **Distribution**: Wheels only (no source distribution) for security and reliability
 
 ## Documentation
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 - [Complete Feature Overview](PROJECT_SUMMARY.md) - All features with examples
 - [Enterprise Features Guide](PHASE_4_5_FEATURES.md) - OTEL, SBOM signing, GitHub Actions
@@ -212,6 +222,7 @@ The tool automatically annotates pull requests with warnings for new vulnerabili
 - [Contributing Guide](CONTRIBUTING.md) - How to set up development environment
 
 ## Use Cases
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 **Security Teams**: Continuously monitor dependencies for vulnerabilities, get alerts on new CVEs, verify supply chain integrity via SBOM signing
 
@@ -224,10 +235,12 @@ The tool automatically annotates pull requests with warnings for new vulnerabili
 **Development Teams**: Understand dependencies, remove unused packages, stay up-to-date on security issues
 
 ## Requirements
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 Python 3.8+ on Linux (x86_64), macOS (Intel/ARM), or Windows (x86_64).
 
 ## License
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 Proprietary License - Free to use with explicit attribution. See [LICENSE](LICENSE) for details.
 
@@ -235,6 +248,7 @@ When using PyDependencyCheck, include this attribution:
 > Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)
 
 ## Support
+See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.
 
 Report issues: https://github.com/Mullassery/PyDependencyCheck/issues
 Ask questions: https://github.com/Mullassery/PyDependencyCheck/discussions

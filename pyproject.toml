@@ -9,7 +9,7 @@ description = "Dependency intelligence and governance platform for Python projec
 authors = [
     {name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}
 ]
-license = {text = "Proprietary"}
+license = {text = "Proprietary License — Free to use with explicit attribution"}
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

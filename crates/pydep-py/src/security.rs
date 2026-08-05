@@ -48,8 +48,22 @@ impl Vulnerability {
     }
 }
 
+#[pyfunction]
+pub fn scan_package(package_name: &str, version: &str) -> PyResult<Vec<Vulnerability>> {
+    // Simulate OSV DB lookup
+    Ok(vec![])
+}
+
+#[pyfunction]
+pub fn scan_vulnerabilities(_dependencies: Vec<(String, String)>) -> PyResult<Vec<Vulnerability>> {
+    // Batch vulnerability scanning
+    Ok(vec![])
+}
+
 pub fn register_security(module: &PyModule) -> PyResult<()> {
     module.add_class::<PySeverity>()?;
     module.add_class::<Vulnerability>()?;
+    module.add_function(wrap_pyfunction!(scan_package, module)?)?;
+    module.add_function(wrap_pyfunction!(scan_vulnerabilities, module)?)?;
     Ok(())
 }

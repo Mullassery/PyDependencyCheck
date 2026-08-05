@@ -37,6 +37,27 @@ impl DependencyGraph {
     fn edge_count(&self) -> usize {
         self.inner.edge_count()
     }
+
+    fn find_cycles(&self) -> PyResult<Vec<Vec<String>>> {
+        self.inner.find_cycles()
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+    }
+
+    fn get_all_dependencies(&self, package: &str) -> PyResult<Vec<String>> {
+        self.inner.get_all_dependencies(package)
+            .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(e.to_string()))
+    }
+
+
+    fn nodes(&self) -> Vec<(String, Option<String>, bool)> {
+        self.inner.nodes().into_iter()
+            .map(|n| (n.name.clone(), n.version.clone(), n.is_direct))
+            .collect()
+    }
+
+    fn edges(&self) -> Vec<(String, String)> {
+        self.inner.edges()
+    }
 }
 
 pub fn register_graph(module: &PyModule) -> PyResult<()> {

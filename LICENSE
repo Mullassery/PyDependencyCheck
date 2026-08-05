@@ -1,20 +1,16 @@
-PyDependencyCheck License
-========================
+Proprietary License — Free to use with explicit attribution
 
-Copyright (c) 2024 Georgi Mammen Mullassery
+Copyright (c) 2026 Georgi Mammen Mullassery
 
-TERMS OF USE
-============
-
-This software is provided free of charge under the following terms:
+TERMS AND CONDITIONS:
 
 1. GRANT OF LICENSE
-   You are granted a non-exclusive, royalty-free, worldwide license to use, copy,
-   modify, and distribute this software and its documentation, subject to the
-   conditions set forth herein.
+   This software is provided free of charge under a proprietary license.
+   You are granted a non-exclusive, royalty-free, worldwide license to use,
+   copy, modify, and distribute this software and its documentation.
 
 2. ATTRIBUTION REQUIREMENT
-   You must include the following attribution in any documentation, code comments,
+   You MUST include the following attribution in any documentation, code comments,
    or materials that reference or use this software:
 
    "Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)"
@@ -29,16 +25,8 @@ This software is provided free of charge under the following terms:
    IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN
    CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-4. LIMITATION OF LIABILITY
-   In no event shall the authors or copyright holders be liable for any special,
-   incidental, indirect, or consequential damages whatsoever (including, without
-   limitation, damages for loss of business profits, business interruption, loss of
-   business information, or any other pecuniary loss) arising out of the use of or
-   inability to use this software, even if the authors have been advised of the
-   possibility of such damages.
-
-5. THIRD-PARTY COMPONENTS
+4. THIRD-PARTY COMPONENTS
    This software incorporates open-source components licensed under their respective
    licenses. See the documentation and source code for details.
 
-For more information, visit: https://github.com/Mullassery/PyDependencyCheck
+For licensing inquiries, contact: mullassery@gmail.com

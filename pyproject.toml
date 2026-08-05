@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pydependencycheck"
-version = "0.1.0"
+version = "1.0.0"
 description = "Dependency intelligence and governance platform for Python projects"
 authors = [
     {name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}

@@ -1,5 +1,6 @@
 use pyo3::prelude::*;
 
+mod ast;
 mod parser;
 mod graph;
 mod security;
@@ -19,6 +20,10 @@ fn _pydependencycheck(py: Python, m: &PyModule) -> PyResult<()> {
     let security_module = PyModule::new(py, "security")?;
     security::register_security(security_module)?;
     m.add_submodule(security_module)?;
+
+    let ast_module = PyModule::new(py, "ast")?;
+    ast::register_ast(ast_module)?;
+    m.add_submodule(ast_module)?;
 
     Ok(())
 }

@@ -269,9 +269,44 @@ class DependencyScanner:
             return {}
 
     def analyze_usage(self) -> Dict[str, int]:
-        """Analyze which dependencies are actually used"""
-        # TODO: Scan source code for imports (Phase 2)
-        return {}
+        """Scan the project's source tree and count how many times each
+        declared dependency is actually imported."""
+        if not HAS_RUST_BACKEND:
+            logger.warning("Rust backend not available, skipping usage analysis")
+            return {}
+
+        try:
+            imported = _pydependencycheck.ast.scan_imports(str(self.project_path))
+        except Exception as e:
+            logger.error(f"Usage analysis failed: {e}")
+            return {}
+
+        counts: Dict[str, int] = {}
+        for dep in self.parsed_deps:
+            normalized = dep["name"].lower().replace("_", "-")
+            counts[dep["name"]] = sum(
+                1 for pkg in imported if pkg.lower().replace("_", "-") == normalized
+            )
+        return counts
+
+    def find_dead_dependencies(self) -> List[Dict[str, str]]:
+        """Find declared dependencies that are never imported anywhere in
+        the project, with a confidence level (High/Medium/Low)."""
+        if not HAS_RUST_BACKEND:
+            logger.warning("Rust backend not available, skipping dead-dependency scan")
+            return []
+
+        installed = [dep["name"] for dep in self.parsed_deps]
+        if not installed:
+            return []
+
+        try:
+            dead = _pydependencycheck.ast.find_dead_packages(str(self.project_path), installed)
+        except Exception as e:
+            logger.error(f"Dead-dependency scan failed: {e}")
+            return []
+
+        return [{"name": name, "confidence": confidence} for name, confidence in dead]
 
     def check_vulnerabilities(self) -> List[Dict[str, Any]]:
         """Check parsed dependencies against the OSV.dev vulnerability database.

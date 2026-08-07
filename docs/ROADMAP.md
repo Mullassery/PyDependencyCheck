@@ -51,15 +51,22 @@ v1.0.0 ━━━━━━━ Enterprise Dashboard & Hardening (6+ weeks)
 ---
 
 ## Phase 2: Usage Analysis & Licenses (v0.2.0) — 4 weeks
-**Status:** 🔴 NOT STARTED
+**Status:** 🟡 IN PROGRESS — import scanning + dead dependency detection shipped in v1.2.0
 
 ### Features
-- 🔄 AST parsing (tree-sitter) to detect imports
-- 🔄 Dead dependency detection (heuristic)
+- ✅ Import scanning to detect what's actually used (`pydependencycheck/scanner.py::analyze_usage`,
+  backed by `crates/pydep-py/src/ast.rs::scan_imports`). Note: this is regex-based line scanning
+  (`crates/pydep-ast/src/imports.rs`), not tree-sitter — despite the module doc comment's original
+  claim. Works for the common import forms (`import x`, `from x import y`, aliases, simple dynamic
+  imports) but can miss import statements split across unusual multi-line formatting.
+- ✅ Dead dependency detection (heuristic) — `find_dead_dependencies()`, confidence-tagged
+  (High = never imported, Medium = imported exactly once). Delegates to the existing
+  `UsageAnalysis::find_potential_dead_deps` heuristics in `pydep-ast/src/usage.rs`.
 - 🔄 License detection from PyPI metadata
 - 🔄 License compliance checking (MIT, GPL, etc.)
 - 🔄 Removal impact analysis
-- 🔄 Extended CLI (usage, unused, licenses, impact)
+- 🔄 Extended CLI (usage, unused, licenses, impact) — Python API exists (`analyze_usage`,
+  `find_dead_dependencies`); no CLI subcommands wired to them yet.
 
 ### New CLI Commands
 ```bash

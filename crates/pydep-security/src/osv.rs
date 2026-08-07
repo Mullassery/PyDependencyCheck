@@ -1,24 +1,46 @@
-use crate::{Vulnerability, Severity, SecurityResult};
-use std::collections::HashMap;
+use crate::cache::VulnerabilityCache;
+use crate::{SecurityError, SecurityResult, Severity, Vulnerability};
+use semver::Version;
 use serde::{Deserialize, Serialize};
+
+const OSV_API_URL: &str = "https://api.osv.dev/v1/query";
+const ECOSYSTEM: &str = "PyPI";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsvVulnerability {
     pub id: String,
-    pub summary: String,
+    #[serde(default)]
+    pub summary: Option<String>,
+    #[serde(default)]
     pub details: Option<String>,
+    #[serde(default)]
     pub affected: Vec<OsvAffected>,
+    #[serde(default)]
     pub references: Vec<OsvReference>,
+    #[serde(default)]
     pub published: Option<String>,
+    #[serde(default)]
     pub modified: Option<String>,
-    pub severity: Option<String>,
-    pub cvss_v3_score: Option<f64>,
+    #[serde(default)]
+    pub severity: Vec<OsvSeverity>,
+    #[serde(default)]
+    pub database_specific: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OsvSeverity {
+    #[serde(rename = "type")]
+    pub kind: String,
+    pub score: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsvAffected {
-    pub package: OsvPackage,
+    #[serde(default)]
+    pub package: Option<OsvPackage>,
+    #[serde(default)]
     pub ranges: Option<Vec<OsvRange>>,
+    #[serde(default)]
     pub versions: Option<Vec<String>>,
 }
 
@@ -30,155 +52,377 @@ pub struct OsvPackage {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsvRange {
-    pub r#type: String, // "SEMVER", "GIT", etc.
+    pub r#type: String, // "SEMVER", "ECOSYSTEM", "GIT", etc.
     pub events: Vec<OsvEvent>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsvEvent {
+    #[serde(default)]
     pub introduced: Option<String>,
+    #[serde(default)]
     pub fixed: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OsvReference {
-    pub r#type: String,
+    #[serde(default)]
+    pub r#type: Option<String>,
     pub url: String,
 }
 
-/// OSV Database client (in-memory mock for now)
+#[derive(Debug, Serialize)]
+struct OsvQueryPackage<'a> {
+    name: &'a str,
+    ecosystem: &'a str,
+}
+
+#[derive(Debug, Serialize)]
+struct OsvQueryRequest<'a> {
+    package: OsvQueryPackage<'a>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    version: Option<&'a str>,
+}
+
+#[derive(Debug, Deserialize)]
+struct OsvQueryResponse {
+    #[serde(default)]
+    vulns: Vec<OsvVulnerability>,
+}
+
+/// Client for the OSV.dev vulnerability database, with a 7-day on-disk cache.
 pub struct OsvClient {
-    vulnerabilities: HashMap<String, Vec<OsvVulnerability>>,
+    http: reqwest::blocking::Client,
+    cache: Option<VulnerabilityCache>,
 }
 
 impl OsvClient {
     pub fn new() -> Self {
         Self {
-            vulnerabilities: HashMap::new(),
+            http: reqwest::blocking::Client::builder()
+                .user_agent("pydependencycheck/1.0")
+                .timeout(std::time::Duration::from_secs(10))
+                .build()
+                .unwrap_or_else(|_| reqwest::blocking::Client::new()),
+            cache: VulnerabilityCache::new().ok(),
         }
     }
 
-    /// Query vulnerabilities for a package synchronously
+    /// Query the live OSV database for a package, optionally scoped to a
+    /// specific version. Results are cached on disk for 7 days.
     pub fn query_package(
         &self,
         package: &str,
         version: Option<&str>,
     ) -> SecurityResult<Vec<Vulnerability>> {
-        let vulns = self.vulnerabilities.get(&package.to_lowercase())
-            .cloned()
-            .unwrap_or_default();
+        let body = self.fetch_raw(package, version)?;
+        let parsed: OsvQueryResponse = serde_json::from_str(&body)
+            .map_err(|e| SecurityError::OsvError(format!("failed to parse OSV response: {e}")))?;
 
         let mut results = Vec::new();
-
-        for vuln in vulns {
-            // Check if vulnerability affects this version
-            if let Some(version_str) = version {
-                if self.version_affected(&vuln, version_str) {
-                    results.push(self.osv_to_vuln(&vuln, package));
-                }
-            } else {
-                // No version specified, include all
-                results.push(self.osv_to_vuln(&vuln, package));
+        for vuln in &parsed.vulns {
+            match version {
+                Some(v) if !self.version_affected(vuln, v) => continue,
+                _ => {}
             }
+            results.push(self.osv_to_vuln(vuln, package));
         }
-
         Ok(results)
     }
 
-    /// Check if a version is affected by vulnerability
+    /// Fetch the raw OSV response body, using the on-disk cache when fresh.
+    fn fetch_raw(&self, package: &str, version: Option<&str>) -> SecurityResult<String> {
+        if let Some(cache) = &self.cache {
+            if let Some(cached) = cache.get(ECOSYSTEM, package, version) {
+                return Ok(cached);
+            }
+        }
+
+        let request = OsvQueryRequest {
+            package: OsvQueryPackage { name: package, ecosystem: ECOSYSTEM },
+            version,
+        };
+
+        let response = self
+            .http
+            .post(OSV_API_URL)
+            .json(&request)
+            .send()
+            .map_err(|e| SecurityError::NetworkError(format!("OSV request failed: {e}")))?;
+
+        if !response.status().is_success() {
+            return Err(SecurityError::OsvError(format!(
+                "OSV API returned status {}",
+                response.status()
+            )));
+        }
+
+        let body = response
+            .text()
+            .map_err(|e| SecurityError::NetworkError(format!("failed to read OSV response: {e}")))?;
+
+        if let Some(cache) = &self.cache {
+            let _ = cache.put(ECOSYSTEM, package, version, &body);
+        }
+
+        Ok(body)
+    }
+
+    /// Check if a version is affected by a vulnerability, using real semver
+    /// range comparison against `introduced`/`fixed` events, plus exact
+    /// version-list matching for non-range advisories.
     fn version_affected(&self, vuln: &OsvVulnerability, version: &str) -> bool {
-        // Simplified: check if version matches affected versions
+        let target = match Version::parse(version) {
+            Ok(v) => v,
+            // If the version string isn't strict semver (e.g. "1.0" or "1.0.0rc1"),
+            // fall back to exact string matching only.
+            Err(_) => {
+                return vuln
+                    .affected
+                    .iter()
+                    .any(|a| a.versions.as_ref().is_some_and(|vs| vs.iter().any(|v| v == version)));
+            }
+        };
+
         for affected in &vuln.affected {
             if let Some(versions) = &affected.versions {
-                if versions.contains(&version.to_string()) {
+                if versions.iter().any(|v| v == version) {
                     return true;
                 }
             }
-            // TODO: Implement semver range checking for ranges
+            if let Some(ranges) = &affected.ranges {
+                for range in ranges {
+                    if range.r#type != "SEMVER" && range.r#type != "ECOSYSTEM" {
+                        continue;
+                    }
+                    if Self::version_in_range(&target, &range.events) {
+                        return true;
+                    }
+                }
+            }
         }
         false
     }
 
-    /// Convert OSV format to internal Vulnerability
+    /// SEMVER ranges in OSV are a sorted sequence of introduced/fixed/last_affected
+    /// events. A version is affected if it falls at-or-after the most recent
+    /// `introduced` bound that precedes it, and before the next `fixed` bound.
+    fn version_in_range(target: &Version, events: &[OsvEvent]) -> bool {
+        let mut introduced: Option<Version> = None;
+        let mut fixed_after_introduction: Option<Version> = None;
+
+        // Events are ordered; find the introduced bound this version falls under,
+        // then check whether a fix landed before this version.
+        let mut in_window = false;
+        for event in events {
+            if let Some(intro) = &event.introduced {
+                let intro_v = Self::parse_lenient(intro);
+                let clears_bound = intro_v.as_ref().map(|v| target >= v).unwrap_or(true); // "0" means "all versions"
+                if clears_bound {
+                    introduced = intro_v;
+                    in_window = true;
+                    fixed_after_introduction = None;
+                }
+            }
+            if let Some(fixed) = &event.fixed {
+                if in_window {
+                    if let Some(fixed_v) = Self::parse_lenient(fixed) {
+                        if target < &fixed_v {
+                            fixed_after_introduction = None;
+                        } else {
+                            in_window = false;
+                            fixed_after_introduction = Some(fixed_v);
+                        }
+                    }
+                }
+            }
+        }
+
+        let _ = introduced;
+        let _ = fixed_after_introduction;
+        in_window
+    }
+
+    fn parse_lenient(v: &str) -> Option<Version> {
+        Version::parse(v).ok().or_else(|| {
+            // Pad "1.2" -> "1.2.0" since OSV ranges often omit the patch component.
+            let parts: Vec<&str> = v.split('.').collect();
+            if parts.len() == 2 {
+                Version::parse(&format!("{v}.0")).ok()
+            } else {
+                None
+            }
+        })
+    }
+
     fn osv_to_vuln(&self, osv: &OsvVulnerability, package: &str) -> Vulnerability {
-        let severity = if let Some(cvss) = osv.cvss_v3_score {
-            crate::scoring::RiskScorer::cvss_to_severity(cvss)
-        } else {
-            Severity::Medium
-        };
+        let severity = Self::derive_severity(osv);
+        let cvss_score = osv
+            .severity
+            .iter()
+            .find(|s| s.kind == "CVSS_V3" || s.kind == "CVSS_V4")
+            .and_then(|s| Self::cvss_base_score_from_vector(&s.score));
 
         Vulnerability {
             id: osv.id.clone(),
             package_name: package.to_string(),
             package_version: None,
             severity,
-            cvss_score: osv.cvss_v3_score,
-            description: osv.summary.clone(),
-            affected_versions: osv.affected
+            cvss_score,
+            description: osv
+                .summary
+                .clone()
+                .or_else(|| osv.details.clone())
+                .unwrap_or_else(|| "No description available".to_string()),
+            affected_versions: osv
+                .affected
                 .iter()
                 .flat_map(|a| a.versions.clone().unwrap_or_default())
                 .collect(),
-            fix_available: osv.affected
-                .iter()
-                .any(|a| a.ranges.as_ref()
-                    .and_then(|r| r.iter().find(|range| range.events.iter().any(|e| e.fixed.is_some())))
-                    .is_some()),
-            fix_version: osv.affected
+            fix_available: osv.affected.iter().any(|a| {
+                a.ranges
+                    .as_ref()
+                    .map(|ranges| ranges.iter().any(|r| r.events.iter().any(|e| e.fixed.is_some())))
+                    .unwrap_or(false)
+            }),
+            fix_version: osv
+                .affected
                 .iter()
                 .find_map(|a| a.ranges.as_ref())
-                .and_then(|ranges| ranges.iter()
-                    .find_map(|r| r.events.iter()
-                        .find_map(|e| e.fixed.clone()))),
+                .and_then(|ranges| ranges.iter().find_map(|r| r.events.iter().rev().find_map(|e| e.fixed.clone()))),
         }
     }
 
-    /// Load known vulnerabilities for common packages (mock data)
-    pub fn load_known_vulns(&mut self) {
-        // Mock vulnerability data for testing
-        // In production, this would load from OSV database
+    /// Prefer the GitHub-Security-Advisory-style `database_specific.severity`
+    /// string (present on the large majority of PyPI advisories in OSV);
+    /// fall back to bucketing a numeric CVSS base score if that's all we have.
+    fn derive_severity(osv: &OsvVulnerability) -> Severity {
+        if let Some(db_specific) = &osv.database_specific {
+            if let Some(sev_str) = db_specific.get("severity").and_then(|v| v.as_str()) {
+                match sev_str.to_uppercase().as_str() {
+                    "CRITICAL" => return Severity::Critical,
+                    "HIGH" => return Severity::High,
+                    "MODERATE" | "MEDIUM" => return Severity::Medium,
+                    "LOW" => return Severity::Low,
+                    _ => {}
+                }
+            }
+        }
 
-        let mut django_vulns = Vec::new();
+        if let Some(entry) = osv.severity.iter().find(|s| s.kind == "CVSS_V3" || s.kind == "CVSS_V4") {
+            if let Some(score) = Self::cvss_base_score_from_vector(&entry.score) {
+                return crate::scoring::RiskScorer::cvss_to_severity(score);
+            }
+        }
 
-        // Example CVE for Django
-        django_vulns.push(OsvVulnerability {
-            id: "GHSA-xxxx-xxxx-xxxx".to_string(),
-            summary: "SQL Injection in Django ORM".to_string(),
-            details: Some("A SQL injection vulnerability in Django's ORM...".to_string()),
-            affected: vec![OsvAffected {
-                package: OsvPackage {
-                    ecosystem: "PyPI".to_string(),
-                    name: "django".to_string(),
-                },
-                ranges: Some(vec![OsvRange {
-                    r#type: "SEMVER".to_string(),
-                    events: vec![
-                        OsvEvent { introduced: Some("2.0.0".to_string()), fixed: None },
-                        OsvEvent { introduced: None, fixed: Some("3.2.5".to_string()) },
-                    ],
-                }]),
-                versions: None,
-            }],
-            references: vec![OsvReference {
-                r#type: "ADVISORY".to_string(),
-                url: "https://github.com/advisories/...".to_string(),
-            }],
-            published: Some("2021-01-01T00:00:00Z".to_string()),
-            modified: None,
-            severity: Some("HIGH".to_string()),
-            cvss_v3_score: Some(7.5),
-        });
-
-        self.vulnerabilities.insert("django".to_string(), django_vulns);
+        Severity::Medium
     }
 
-    /// Check if OSV snapshot is available
-    pub fn has_snapshot(&self) -> bool {
-        !self.vulnerabilities.is_empty()
+    /// Extract the base score component embedded in a CVSS vector string when
+    /// present (some OSV sources embed ".../S:U.../score:7.5" style suffixes);
+    /// most CVSS_V3 entries from OSV are the vector only with no numeric score,
+    /// in which case this returns None and callers fall back to database_specific.
+    fn cvss_base_score_from_vector(vector: &str) -> Option<f64> {
+        vector
+            .split('/')
+            .find_map(|part| part.strip_prefix("score:"))
+            .and_then(|s| s.parse::<f64>().ok())
+    }
+
+    /// Run cache maintenance (removes entries older than the TTL).
+    pub fn cleanup_cache(&self) -> SecurityResult<()> {
+        match &self.cache {
+            Some(cache) => cache.cleanup_stale_cache(),
+            None => Ok(()),
+        }
+    }
+
+    pub fn has_cache(&self) -> bool {
+        self.cache.is_some()
     }
 }
 
 impl Default for OsvClient {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn range(events: Vec<(Option<&str>, Option<&str>)>) -> Vec<OsvEvent> {
+        events
+            .into_iter()
+            .map(|(i, f)| OsvEvent { introduced: i.map(String::from), fixed: f.map(String::from) })
+            .collect()
+    }
+
+    #[test]
+    fn version_in_range_detects_affected_version() {
+        let events = range(vec![(Some("2.0.0"), None), (None, Some("3.2.5"))]);
+        let target = Version::parse("2.5.0").unwrap();
+        assert!(OsvClient::version_in_range(&target, &events));
+    }
+
+    #[test]
+    fn version_in_range_excludes_fixed_version() {
+        let events = range(vec![(Some("2.0.0"), None), (None, Some("3.2.5"))]);
+        let target = Version::parse("3.2.5").unwrap();
+        assert!(!OsvClient::version_in_range(&target, &events));
+    }
+
+    #[test]
+    fn version_in_range_excludes_version_before_introduction() {
+        let events = range(vec![(Some("2.0.0"), None), (None, Some("3.2.5"))]);
+        let target = Version::parse("1.9.0").unwrap();
+        assert!(!OsvClient::version_in_range(&target, &events));
+    }
+
+    #[test]
+    fn version_in_range_handles_zero_lower_bound() {
+        // introduced: "0" means "affected since the beginning of history"
+        let events = range(vec![(Some("0"), None), (None, Some("1.5.0"))]);
+        let target = Version::parse("0.1.0").unwrap();
+        assert!(OsvClient::version_in_range(&target, &events));
+    }
+
+    #[test]
+    fn derive_severity_prefers_database_specific() {
+        let vuln = OsvVulnerability {
+            id: "GHSA-test".into(),
+            summary: None,
+            details: None,
+            affected: vec![],
+            references: vec![],
+            published: None,
+            modified: None,
+            severity: vec![],
+            database_specific: Some(serde_json::json!({"severity": "HIGH"})),
+        };
+        assert_eq!(OsvClient::derive_severity(&vuln), Severity::High);
+    }
+
+    #[test]
+    fn parses_real_osv_response_shape() {
+        let sample = r#"{
+            "vulns": [{
+                "id": "GHSA-xxxx-xxxx-xxxx",
+                "summary": "SQL Injection in Django ORM",
+                "affected": [{
+                    "package": {"ecosystem": "PyPI", "name": "django"},
+                    "ranges": [{
+                        "type": "SEMVER",
+                        "events": [{"introduced": "2.0.0"}, {"fixed": "3.2.5"}]
+                    }]
+                }],
+                "references": [{"type": "ADVISORY", "url": "https://github.com/advisories/x"}],
+                "database_specific": {"severity": "HIGH"}
+            }]
+        }"#;
+        let parsed: OsvQueryResponse = serde_json::from_str(sample).unwrap();
+        assert_eq!(parsed.vulns.len(), 1);
+        assert_eq!(parsed.vulns[0].id, "GHSA-xxxx-xxxx-xxxx");
     }
 }

@@ -11,6 +11,7 @@ pub mod cache;
 pub mod errors;
 
 pub use errors::{SecurityError, SecurityResult};
+pub use osv::OsvClient;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Vulnerability {

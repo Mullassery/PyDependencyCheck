@@ -90,10 +90,13 @@ pydependencycheck impact --remove pandas
 ---
 
 ## Phase 3: Security & Health Score (v0.3.0) — 4 weeks
-**Status:** 🔴 NOT STARTED
+**Status:** 🟡 IN PROGRESS — OSV live querying shipped in v1.1.0
 
 ### Features
-- 🔄 OSV integration (offline snapshot + api.osv.dev)
+- ✅ OSV integration — live api.osv.dev querying with real semver range matching
+  (`crates/pydep-security/src/osv.rs`), exposed via `check_vulnerabilities()`.
+  Offline weekly snapshot download (`osv-db.db`) not yet built — every query
+  currently hits the live API (cached locally, see below).
 - 🔄 Transitive vulnerability propagation
 - 🔄 Health score (0-100): vulnerabilities, maintenance, bloat
 - 🔄 Bloat score: dependency count, size
@@ -101,9 +104,9 @@ pydependencycheck impact --remove pandas
 - 🔄 Performance profiling (which deps slow startup?)
 
 ### OSV Strategy
-1. **Offline:** Download `osv-db.db` weekly (~50MB)
-2. **Local cache:** ~/.pydep/osv-latest.db (7-day TTL)
-3. **Online fallback:** api.osv.dev (rate limited)
+1. **Offline:** Download `osv-db.db` weekly (~50MB) — not yet implemented
+2. **Local cache:** ~/.pydep/osv-cache/ (7-day TTL) — ✅ implemented
+3. **Online fallback:** api.osv.dev (rate limited) — ✅ implemented as the primary path
 
 ### Health Score Formula
 ```

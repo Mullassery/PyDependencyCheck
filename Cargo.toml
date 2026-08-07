@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [package]
 name = "pydependencycheck"
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
 license = "Proprietary"
@@ -26,7 +26,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-version = "1.0.0"
+version = "1.1.0"
 edition = "2021"
 authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
 license = "Proprietary"
@@ -43,9 +43,11 @@ tracing = "0.1"
 rayon = "1.8"
 tree-sitter = "0.20"
 tree-sitter-python = "0.20"
-reqwest = { version = "0.11", features = ["json"] }
+reqwest = { version = "0.11", features = ["json", "blocking"] }
 tokio = { version = "1.35", features = ["full"] }
 pyo3 = { version = "0.21", features = ["extension-module"] }
+semver = "1.0"
+dirs = "5.0"
 
 [dependencies]
 pydep-parser = { path = "crates/pydep-parser" }
@@ -56,6 +58,7 @@ pyo3.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+tracing.workspace = true
 
 [profile.release]
 opt-level = 3

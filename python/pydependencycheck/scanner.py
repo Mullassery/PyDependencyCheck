@@ -274,9 +274,43 @@ class DependencyScanner:
         return {}
 
     def check_vulnerabilities(self) -> List[Dict[str, Any]]:
-        """Check for known vulnerabilities"""
-        # TODO: Query OSV database (Phase 3)
-        return []
+        """Check parsed dependencies against the OSV.dev vulnerability database.
+
+        Only pinned dependencies (those with a resolved version) can be
+        checked meaningfully, since OSV's SEMVER range matching needs a
+        concrete version to test against.
+        """
+        if not HAS_RUST_BACKEND:
+            logger.warning("Rust backend not available, skipping vulnerability scan")
+            return []
+
+        pinned = [
+            (dep["name"], dep["version"])
+            for dep in self.parsed_deps
+            if dep.get("version")
+        ]
+        if not pinned:
+            return []
+
+        try:
+            vulns = _pydependencycheck.security.scan_vulnerabilities(pinned)
+        except Exception as e:
+            logger.error(f"Vulnerability scan failed: {e}")
+            return []
+
+        return [
+            {
+                "id": v.id,
+                "package_name": v.package_name,
+                "severity": v.severity,
+                "cvss_score": v.cvss_score,
+                "description": v.description,
+                "affected_versions": v.affected_versions,
+                "fix_available": v.fix_available,
+                "fix_version": v.fix_version,
+            }
+            for v in vulns
+        ]
 
     def compute_health_score(self) -> int:
         """Compute overall health score (0-100)"""

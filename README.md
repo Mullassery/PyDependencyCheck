@@ -5,7 +5,7 @@ Production-grade dependency intelligence platform for Python. Answers the critic
 [![PyPI](https://img.shields.io/pypi/v/pydependencycheck)](https://pypi.org/project/pydependencycheck)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
 [![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](./LICENSE)
-[![Tests Passing](https://img.shields.io/badge/tests-21%20passing-success)](./crates)
+[![CI](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml)
 
 ## What Problem Does It Solve?
 See [INSTALL.md](.github/INSTALL.md) for platform-specific installation guidance.

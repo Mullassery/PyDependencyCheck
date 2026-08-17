@@ -172,6 +172,12 @@ Proprietary License - free to use with explicit attribution. See [LICENSE](LICEN
 When using PyDependencyCheck, include this attribution:
 > Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)
 
+## Known issues
+
+- `setup.py`/`setup.cfg`-only projects (no `requirements.txt` or `pyproject.toml`) are not parsed yet — AST parsing of `setup.py` and INI parsing of `setup.cfg` are unimplemented (`crates/pydep-parser/src/setup.rs`, `python/pydependencycheck/scanner.py`).
+- The health-score "Quality" factor is a single metric today; aggregating multiple quality signals is tracked as future work (`python/pydependencycheck/scanner.py`).
+- No open GitHub issues at the time of this writing.
+
 ## Support
 
 - Issues: https://github.com/Mullassery/PyDependencyCheck/issues

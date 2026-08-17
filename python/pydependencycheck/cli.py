@@ -30,7 +30,7 @@ def cli():
     Scan dependencies, analyze usage, detect vulnerabilities, and track supply chain.
 
     Examples:
-        pydependencycheck scan .
+        pydependencycheck scan
         pydependencycheck why requests
         pydependencycheck trace urllib3
         pydependencycheck list --path /myproject

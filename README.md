@@ -35,8 +35,8 @@ Requires Python 3.8+. Prebuilt wheels are published for Linux, macOS (Intel/Appl
 ## Quick start
 
 ```bash
-# Scan the current project
-pydependencycheck scan .
+# Scan the current project (--path defaults to ".")
+pydependencycheck scan
 
 # Why is this package installed, and who added it?
 pydependencycheck why requests
@@ -127,7 +127,7 @@ jobs:
           python-version: '3.11'
 
       - run: pip install pydependencycheck
-      - run: pydependencycheck scan . --save-snapshot
+      - run: pydependencycheck scan --save-snapshot
       - run: pydependencycheck gate --min-health 50
       - run: pydependencycheck export --format cyclonedx --output sbom.json
 

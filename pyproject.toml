@@ -6,6 +6,7 @@ build-backend = "maturin"
 name = "pydependencycheck"
 version = "1.3.0"
 description = "Dependency intelligence and governance platform for Python projects"
+readme = "README.md"
 authors = [
     {name = "Georgi Mammen Mullassery", email = "mullassery@gmail.com"}
 ]

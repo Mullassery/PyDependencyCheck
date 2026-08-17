@@ -1,9 +1,24 @@
 """Report generators for different output formats"""
 
+import html
 import json
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 from datetime import datetime
+
+
+def escape(value: Any) -> str:
+    """HTML-entity-encode an untrusted value before interpolating it into HTML.
+
+    Dependency metadata (package names, versions, source paths, ...) can
+    originate from third-party manifests (requirements.txt, pyproject.toml,
+    PyPI responses, etc.) and must never be trusted to be safe to embed
+    directly in HTML output. This mirrors str() for non-string values (e.g.
+    None) so callers can pass raw dict values straight through.
+    """
+    if value is None:
+        return ""
+    return html.escape(str(value), quote=True)
 
 
 class Reporter(ABC):
@@ -44,7 +59,7 @@ class HtmlReporter(Reporter):
         direct_count = sum(1 for d in dependencies if d.get("direct", False))
         transitive_count = len(dependencies) - direct_count
 
-        html = f"""<!DOCTYPE html>
+        html_doc = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
@@ -104,20 +119,29 @@ class HtmlReporter(Reporter):
             <tbody>
 """
 
+        rows = []
         for dep in dependencies:
             dep_type = "Direct" if dep.get("direct", False) else "Transitive"
             badge_class = "badge-direct" if dep.get("direct", False) else "badge-transitive"
             source = dep.get("source", "unknown").split("/")[-1]
 
-            html += f"""                <tr>
-                    <td><strong>{dep['name']}</strong></td>
-                    <td>{dep.get('version', '—')}</td>
-                    <td><span class="badge {badge_class}">{dep_type}</span></td>
-                    <td>{source}</td>
+            # All values below originate from untrusted third-party manifest
+            # data (package names/versions/sources parsed from
+            # requirements.txt, pyproject.toml, etc.) and must be
+            # HTML-entity-encoded before interpolation to prevent stored XSS.
+            rows.append(
+                f"""                <tr>
+                    <td><strong>{escape(dep.get('name'))}</strong></td>
+                    <td>{escape(dep.get('version', '—'))}</td>
+                    <td><span class="badge {badge_class}">{escape(dep_type)}</span></td>
+                    <td>{escape(source)}</td>
                 </tr>
 """
+            )
 
-        html += """            </tbody>
+        html_doc += "".join(rows)
+
+        html_doc += """            </tbody>
         </table>
 
         <div class="footer">
@@ -127,7 +151,7 @@ class HtmlReporter(Reporter):
 </body>
 </html>
 """
-        return html
+        return html_doc
 
 
 class MarkdownReporter(Reporter):

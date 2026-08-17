@@ -6,10 +6,10 @@
 //! - Module usage
 //! - Dead code detection
 
-pub mod imports;
-pub mod usage;
 pub mod dead_code;
 pub mod errors;
+pub mod imports;
+pub mod usage;
 
 pub use errors::{AstError, AstResult};
 
@@ -32,9 +32,17 @@ pub enum ImportType {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::imports::extract_imports_from_source;
 
     #[test]
     fn test_parse_import() {
-        // TODO: Implement test
+        let source = "import requests\nfrom flask import Flask\n";
+        let imports = extract_imports_from_source(source, "test.py").unwrap();
+
+        assert_eq!(imports.len(), 2);
+        assert_eq!(imports[0].module, "requests");
+        assert_eq!(imports[0].import_type, ImportType::Direct);
+        assert_eq!(imports[1].module, "flask");
+        assert_eq!(imports[1].import_type, ImportType::From);
     }
 }

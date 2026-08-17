@@ -139,7 +139,10 @@ impl OsvClient {
         }
 
         let request = OsvQueryRequest {
-            package: OsvQueryPackage { name: package, ecosystem: ECOSYSTEM },
+            package: OsvQueryPackage {
+                name: package,
+                ecosystem: ECOSYSTEM,
+            },
             version,
         };
 
@@ -157,9 +160,9 @@ impl OsvClient {
             )));
         }
 
-        let body = response
-            .text()
-            .map_err(|e| SecurityError::NetworkError(format!("failed to read OSV response: {e}")))?;
+        let body = response.text().map_err(|e| {
+            SecurityError::NetworkError(format!("failed to read OSV response: {e}"))
+        })?;
 
         if let Some(cache) = &self.cache {
             let _ = cache.put(ECOSYSTEM, package, version, &body);
@@ -177,10 +180,11 @@ impl OsvClient {
             // If the version string isn't strict semver (e.g. "1.0" or "1.0.0rc1"),
             // fall back to exact string matching only.
             Err(_) => {
-                return vuln
-                    .affected
-                    .iter()
-                    .any(|a| a.versions.as_ref().is_some_and(|vs| vs.iter().any(|v| v == version)));
+                return vuln.affected.iter().any(|a| {
+                    a.versions
+                        .as_ref()
+                        .is_some_and(|vs| vs.iter().any(|v| v == version))
+                });
             }
         };
 
@@ -282,14 +286,22 @@ impl OsvClient {
             fix_available: osv.affected.iter().any(|a| {
                 a.ranges
                     .as_ref()
-                    .map(|ranges| ranges.iter().any(|r| r.events.iter().any(|e| e.fixed.is_some())))
+                    .map(|ranges| {
+                        ranges
+                            .iter()
+                            .any(|r| r.events.iter().any(|e| e.fixed.is_some()))
+                    })
                     .unwrap_or(false)
             }),
             fix_version: osv
                 .affected
                 .iter()
                 .find_map(|a| a.ranges.as_ref())
-                .and_then(|ranges| ranges.iter().find_map(|r| r.events.iter().rev().find_map(|e| e.fixed.clone()))),
+                .and_then(|ranges| {
+                    ranges
+                        .iter()
+                        .find_map(|r| r.events.iter().rev().find_map(|e| e.fixed.clone()))
+                }),
         }
     }
 
@@ -309,7 +321,11 @@ impl OsvClient {
             }
         }
 
-        if let Some(entry) = osv.severity.iter().find(|s| s.kind == "CVSS_V3" || s.kind == "CVSS_V4") {
+        if let Some(entry) = osv
+            .severity
+            .iter()
+            .find(|s| s.kind == "CVSS_V3" || s.kind == "CVSS_V4")
+        {
             if let Some(score) = Self::cvss_base_score_from_vector(&entry.score) {
                 return crate::scoring::RiskScorer::cvss_to_severity(score);
             }
@@ -355,7 +371,10 @@ mod tests {
     fn range(events: Vec<(Option<&str>, Option<&str>)>) -> Vec<OsvEvent> {
         events
             .into_iter()
-            .map(|(i, f)| OsvEvent { introduced: i.map(String::from), fixed: f.map(String::from) })
+            .map(|(i, f)| OsvEvent {
+                introduced: i.map(String::from),
+                fixed: f.map(String::from),
+            })
             .collect()
     }
 

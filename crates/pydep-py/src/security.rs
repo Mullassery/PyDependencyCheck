@@ -112,7 +112,7 @@ pub fn scan_vulnerabilities(dependencies: Vec<(String, String)>) -> PyResult<Vec
     Ok(all)
 }
 
-pub fn register_security(module: &PyModule) -> PyResult<()> {
+pub fn register_security(module: &Bound<'_, pyo3::types::PyModule>) -> PyResult<()> {
     module.add_class::<PySeverity>()?;
     module.add_class::<Vulnerability>()?;
     module.add_function(wrap_pyfunction!(scan_package, module)?)?;

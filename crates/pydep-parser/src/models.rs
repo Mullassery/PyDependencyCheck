@@ -61,14 +61,14 @@ impl fmt::Display for VersionConstraint {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum VersionSpecifier {
-    Exact(String),           // ==1.0.0
-    GreaterThan(String),     // >1.0.0
+    Exact(String),              // ==1.0.0
+    GreaterThan(String),        // >1.0.0
     GreaterThanOrEqual(String), // >=1.0.0
-    LessThan(String),        // <1.0.0
-    LessThanOrEqual(String), // <=1.0.0
-    NotEqual(String),        // !=1.0.0
-    Compatible(String),      // ~=1.0.0
-    Wildcard(String),        // ==1.0.*
+    LessThan(String),           // <1.0.0
+    LessThanOrEqual(String),    // <=1.0.0
+    NotEqual(String),           // !=1.0.0
+    Compatible(String),         // ~=1.0.0
+    Wildcard(String),           // ==1.0.*
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

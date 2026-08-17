@@ -1,5 +1,5 @@
+use crate::{Dependency, ParserResult};
 use std::path::Path;
-use crate::{Dependency, DependencySource, ParserResult};
 
 /// Parse a setup.py file
 pub fn parse_setup_py(path: &Path) -> ParserResult<Vec<Dependency>> {

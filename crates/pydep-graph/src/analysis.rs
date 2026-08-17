@@ -14,12 +14,12 @@ impl GraphAnalysis {
         // Build adjacency list and in-degree map
         for node in graph.nodes() {
             in_degree.entry(node.name.clone()).or_insert(0);
-            adj_list.entry(node.name.clone()).or_insert_with(Vec::new);
+            adj_list.entry(node.name.clone()).or_default();
         }
 
         for (from, to) in graph.edges() {
             *in_degree.entry(to.clone()).or_insert(0) += 1;
-            adj_list.entry(from).or_insert_with(Vec::new).push(to);
+            adj_list.entry(from).or_default().push(to);
         }
 
         // Find all nodes with in-degree 0
@@ -113,7 +113,7 @@ impl GraphAnalysis {
         }
 
         let mut critical: Vec<_> = dependents_count.into_iter().collect();
-        critical.sort_by(|a, b| b.1.cmp(&a.1));
+        critical.sort_by_key(|b| std::cmp::Reverse(b.1));
         critical
     }
 
@@ -125,12 +125,17 @@ impl GraphAnalysis {
     }
 
     /// Find packages that are transitively required by a package
-    pub fn transitive_dependencies(graph: &DependencyGraph, package: &str) -> GraphResult<Vec<String>> {
+    pub fn transitive_dependencies(
+        graph: &DependencyGraph,
+        package: &str,
+    ) -> GraphResult<Vec<String>> {
         graph.get_all_dependencies(package)
     }
 
     /// Check for "diamond dependency" patterns (A->B, A->C, B->D, C->D)
-    pub fn find_diamond_patterns(graph: &DependencyGraph) -> GraphResult<Vec<(String, String, String)>> {
+    pub fn find_diamond_patterns(
+        graph: &DependencyGraph,
+    ) -> GraphResult<Vec<(String, String, String)>> {
         let mut diamonds = Vec::new();
 
         for start_node in graph.nodes() {
@@ -139,7 +144,7 @@ impl GraphAnalysis {
             if direct_deps.len() >= 2 {
                 // Check if any two direct deps share common dependencies
                 for i in 0..direct_deps.len() {
-                    for j in (i+1)..direct_deps.len() {
+                    for j in (i + 1)..direct_deps.len() {
                         let deps_i = graph.get_all_dependencies(&direct_deps[i])?;
                         let deps_j = graph.get_all_dependencies(&direct_deps[j])?;
 

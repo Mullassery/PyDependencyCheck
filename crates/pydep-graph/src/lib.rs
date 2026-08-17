@@ -7,13 +7,13 @@
 //! - Dependency lineage queries
 //! - Impact analysis
 
-pub mod dag;
 pub mod analysis;
-pub mod serialization;
+pub mod dag;
 pub mod errors;
+pub mod serialization;
 
-pub use dag::DependencyGraph;
 pub use analysis::GraphAnalysis;
+pub use dag::DependencyGraph;
 pub use errors::{GraphError, GraphResult};
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -29,6 +29,15 @@ mod tests {
 
     #[test]
     fn test_graph_creation() {
-        // TODO: Implement test
+        let mut graph = DependencyGraph::new();
+        graph.add_node("app".to_string(), None, true).unwrap();
+        graph
+            .add_node("requests".to_string(), Some("2.32.0".to_string()), false)
+            .unwrap();
+        graph.add_edge("app", "requests").unwrap();
+
+        assert_eq!(graph.node_count(), 2);
+        assert_eq!(graph.edge_count(), 1);
+        assert!(!graph.has_cycles());
     }
 }

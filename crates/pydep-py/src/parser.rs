@@ -1,5 +1,5 @@
-use pyo3::prelude::*;
 use pydep_parser::{parse_file as rs_parse_file, Dependency as RsDependency};
+use pyo3::prelude::*;
 
 #[pyclass]
 pub struct Dependency {
@@ -63,7 +63,7 @@ pub fn parse_pyproject_toml(path: &str) -> PyResult<Vec<Dependency>> {
     parse_file(path)
 }
 
-pub fn register_parser(module: &PyModule) -> PyResult<()> {
+pub fn register_parser(module: &Bound<'_, pyo3::types::PyModule>) -> PyResult<()> {
     module.add_class::<Dependency>()?;
     module.add_function(wrap_pyfunction!(parse_file, module)?)?;
     module.add_function(wrap_pyfunction!(parse_requirements_file, module)?)?;

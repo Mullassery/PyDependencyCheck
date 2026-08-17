@@ -1,6 +1,6 @@
-use crate::{ImportInfo, ImportType, AstResult};
-use std::path::Path;
+use crate::{AstResult, ImportInfo, ImportType};
 use std::collections::HashSet;
+use std::path::Path;
 
 /// Extract all imports from a Python file
 pub fn extract_imports(file_path: &Path) -> AstResult<Vec<ImportInfo>> {
@@ -29,11 +29,7 @@ pub fn extract_imports_from_source(source: &str, file_path: &str) -> AstResult<V
         }
 
         // Handle line continuations
-        let line_to_parse = if trimmed.ends_with('\\') {
-            &trimmed[..trimmed.len()-1]
-        } else {
-            trimmed
-        };
+        let line_to_parse = trimmed.strip_suffix('\\').unwrap_or(trimmed);
 
         // Handle `import` statements
         if let Some(rest) = line_to_parse.strip_prefix("import ") {
@@ -78,16 +74,21 @@ pub fn extract_imports_from_source(source: &str, file_path: &str) -> AstResult<V
             }
         }
         // Handle dynamic imports: importlib.import_module, __import__
-        else if line_to_parse.contains("importlib.import_module") || line_to_parse.contains("__import__") {
+        else if line_to_parse.contains("importlib.import_module")
+            || line_to_parse.contains("__import__")
+        {
             // Extract string literal from import_module("module_name")
             if let Some(start) = line_to_parse.find('(') {
                 if let Some(end) = line_to_parse[start..].find(')') {
-                    let module_expr = &line_to_parse[start+1..start+end];
+                    let module_expr = &line_to_parse[start + 1..start + end];
                     // Try to extract quoted string
                     for quote_char in &['"', '\''] {
                         if let Some(quote_start) = module_expr.find(*quote_char) {
-                            if let Some(quote_end) = module_expr[quote_start+1..].find(*quote_char) {
-                                let module = &module_expr[quote_start+1..quote_start+1+quote_end];
+                            if let Some(quote_end) =
+                                module_expr[quote_start + 1..].find(*quote_char)
+                            {
+                                let module =
+                                    &module_expr[quote_start + 1..quote_start + 1 + quote_end];
                                 if !seen.insert((module.to_string(), ImportType::Dynamic)) {
                                     continue;
                                 }

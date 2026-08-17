@@ -1,5 +1,5 @@
-use std::path::Path;
 use crate::{Dependency, DependencySource, ParserResult, VersionConstraint, VersionSpecifier};
+use std::path::Path;
 
 /// Parse a requirements.txt file
 pub fn parse_requirements_file(path: &Path) -> ParserResult<Vec<Dependency>> {
@@ -25,11 +25,7 @@ pub fn parse_requirements(content: &str, source_path: String) -> ParserResult<Ve
         }
 
         // Handle line continuations (backslash)
-        let line = if line.ends_with('\\') {
-            &line[..line.len()-1]
-        } else {
-            line
-        };
+        let line = line.strip_suffix('\\').unwrap_or(line);
 
         // Parse dependency
         if let Ok(dep) = parse_pep508_requirement(line, &source_path) {
@@ -50,35 +46,44 @@ pub fn parse_requirements(content: &str, source_path: String) -> ParserResult<Ve
 pub fn parse_pep508_requirement(req: &str, source_path: &str) -> ParserResult<Dependency> {
     let req = req.trim();
     if req.is_empty() {
-        return Err(crate::errors::ParserError::InvalidRequirement(req.to_string()));
+        return Err(crate::errors::ParserError::InvalidRequirement(
+            req.to_string(),
+        ));
     }
 
     // Split on semicolon to separate environment markers
     let (req_part, markers) = if let Some(pos) = req.find(';') {
-        let marker = req[pos+1..].trim().to_string();
+        let marker = req[pos + 1..].trim().to_string();
         (&req[..pos], Some(marker))
     } else {
         (req, None)
     };
 
-    // Extract extras: name[extra1,extra2] or name
+    // Extract extras: name[extra1,extra2]>=1.0 or name>=1.0
+    //
+    // The version constraint (if any) comes *after* the closing bracket
+    // (e.g. "django[async]>=3.2"), so it must be stitched back onto the
+    // name before version parsing -- otherwise it's silently dropped and
+    // the dependency looks unpinned even though a constraint was declared.
     let (name_part, extras) = if let Some(bracket_pos) = req_part.find('[') {
         if let Some(end_bracket) = req_part.find(']') {
             let name = req_part[..bracket_pos].trim();
-            let extras_str = &req_part[bracket_pos+1..end_bracket];
-            let extras = extras_str.split(',')
+            let extras_str = &req_part[bracket_pos + 1..end_bracket];
+            let extras = extras_str
+                .split(',')
                 .map(|s| s.trim().to_string())
                 .collect();
-            (name, extras)
+            let after_bracket = req_part[end_bracket + 1..].trim();
+            (format!("{}{}", name, after_bracket), extras)
         } else {
-            (req_part, Vec::new())
+            (req_part.to_string(), Vec::new())
         }
     } else {
-        (req_part, Vec::new())
+        (req_part.to_string(), Vec::new())
     };
 
     // Split name and version constraint
-    let (name, version_constraint) = parse_name_and_version(name_part)?;
+    let (name, version_constraint) = parse_name_and_version(&name_part)?;
 
     Ok(Dependency {
         name: normalize_package_name(&name),
@@ -150,7 +155,7 @@ fn parse_version_constraint(s: &str) -> ParserResult<VersionConstraint> {
 
         // Extract version number (until comma or end)
         let (version, next_remaining) = if let Some(comma_pos) = remaining.find(',') {
-            (remaining[..comma_pos].trim(), &remaining[comma_pos+1..])
+            (remaining[..comma_pos].trim(), &remaining[comma_pos + 1..])
         } else {
             (remaining.trim(), "")
         };
@@ -215,6 +220,13 @@ mod tests {
         assert_eq!(deps.len(), 1);
         assert_eq!(deps[0].name, "requests");
         assert_eq!(deps[0].extras, vec!["security"]);
+        // Regression test: the version constraint after the closing
+        // bracket must not be silently dropped.
+        assert!(deps[0].version_constraint.is_some());
+        assert_eq!(
+            deps[0].version_constraint.as_ref().unwrap().raw,
+            ">=2.0,<3.0"
+        );
     }
 
     #[test]
@@ -228,7 +240,10 @@ mod tests {
     #[test]
     fn test_normalize_package_name() {
         assert_eq!(normalize_package_name("Django"), "django");
-        assert_eq!(normalize_package_name("Django_REST_Framework"), "django-rest-framework");
+        assert_eq!(
+            normalize_package_name("Django_REST_Framework"),
+            "django-rest-framework"
+        );
         assert_eq!(normalize_package_name("my.package"), "my-package");
     }
 

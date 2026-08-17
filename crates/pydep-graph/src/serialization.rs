@@ -1,5 +1,5 @@
 use crate::{DependencyGraph, GraphResult};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GraphJson {
@@ -23,7 +23,8 @@ pub struct EdgeJson {
 impl DependencyGraph {
     /// Serialize graph to JSON
     pub fn to_json(&self) -> GraphResult<String> {
-        let nodes = self.nodes()
+        let nodes = self
+            .nodes()
             .iter()
             .map(|n| NodeJson {
                 name: n.name.clone(),
@@ -58,8 +59,12 @@ mod tests {
     #[test]
     fn to_json_includes_edges() {
         let mut graph = DependencyGraph::new();
-        graph.add_node("app".to_string(), Some("1.0.0".to_string()), true).unwrap();
-        graph.add_node("requests".to_string(), Some("2.31.0".to_string()), false).unwrap();
+        graph
+            .add_node("app".to_string(), Some("1.0.0".to_string()), true)
+            .unwrap();
+        graph
+            .add_node("requests".to_string(), Some("2.31.0".to_string()), false)
+            .unwrap();
         graph.add_edge("app", "requests").unwrap();
 
         let value = graph.to_json_value().unwrap();
@@ -75,7 +80,9 @@ mod tests {
     #[test]
     fn to_json_with_no_edges_is_empty_array_not_missing() {
         let mut graph = DependencyGraph::new();
-        graph.add_node("standalone".to_string(), None, true).unwrap();
+        graph
+            .add_node("standalone".to_string(), None, true)
+            .unwrap();
 
         let value = graph.to_json_value().unwrap();
         assert_eq!(value["edges"].as_array().unwrap().len(), 0);

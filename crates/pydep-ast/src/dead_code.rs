@@ -25,12 +25,17 @@ impl DeadCodeDetector {
     /// (e.g. "yaml", not the PyPI package name "PyYAML" — callers should
     /// pass whatever `extract_package_name` would normalize to, or raw
     /// module names, since matching here is case/hyphen/underscore-insensitive).
-    pub fn find_dead_packages(imports: Vec<String>, installed: Vec<String>) -> AstResult<Vec<String>> {
-        Ok(Self::find_dead_packages_with_confidence(imports, installed)?
-            .into_iter()
-            .filter(|d| d.confidence == DeadCodeConfidence::High)
-            .map(|d| d.name)
-            .collect())
+    pub fn find_dead_packages(
+        imports: Vec<String>,
+        installed: Vec<String>,
+    ) -> AstResult<Vec<String>> {
+        Ok(
+            Self::find_dead_packages_with_confidence(imports, installed)?
+                .into_iter()
+                .filter(|d| d.confidence == DeadCodeConfidence::High)
+                .map(|d| d.name)
+                .collect(),
+        )
     }
 
     /// Same as `find_dead_packages`, but returns every candidate (including
@@ -42,7 +47,12 @@ impl DeadCodeDetector {
     ) -> AstResult<Vec<DeadPackage>> {
         let import_infos: Vec<ImportInfo> = imports
             .into_iter()
-            .map(|module| ImportInfo { module, file: String::new(), line: 0, import_type: ImportType::Direct })
+            .map(|module| ImportInfo {
+                module,
+                file: String::new(),
+                line: 0,
+                import_type: ImportType::Direct,
+            })
             .collect();
 
         let analysis = UsageAnalysis::from_imports(import_infos);
@@ -91,8 +101,11 @@ mod tests {
         let imports = vec!["requests".to_string()]; // imported exactly once
         let installed = vec!["requests".to_string()];
 
-        let with_confidence =
-            DeadCodeDetector::find_dead_packages_with_confidence(imports.clone(), installed.clone()).unwrap();
+        let with_confidence = DeadCodeDetector::find_dead_packages_with_confidence(
+            imports.clone(),
+            installed.clone(),
+        )
+        .unwrap();
         assert_eq!(with_confidence.len(), 1);
         assert_eq!(with_confidence[0].confidence, DeadCodeConfidence::Medium);
 
@@ -104,7 +117,11 @@ mod tests {
 
     #[test]
     fn imported_package_is_not_flagged() {
-        let imports = vec!["flask".to_string(), "flask".to_string(), "flask".to_string()];
+        let imports = vec![
+            "flask".to_string(),
+            "flask".to_string(),
+            "flask".to_string(),
+        ];
         let installed = vec!["flask".to_string()];
 
         let dead = DeadCodeDetector::find_dead_packages(imports, installed).unwrap();
@@ -113,8 +130,11 @@ mod tests {
 
     #[test]
     fn dev_tools_are_never_flagged_even_when_unimported() {
-        let dead = DeadCodeDetector::find_dead_packages(vec![], vec!["pytest".to_string(), "black".to_string()])
-            .unwrap();
+        let dead = DeadCodeDetector::find_dead_packages(
+            vec![],
+            vec!["pytest".to_string(), "black".to_string()],
+        )
+        .unwrap();
         assert!(dead.is_empty());
     }
 }

@@ -1,4 +1,4 @@
-use crate::{Vulnerability, Severity, SecurityResult};
+use crate::{SecurityResult, Severity, Vulnerability};
 use std::collections::HashMap;
 
 /// Risk scoring for dependencies
@@ -19,7 +19,8 @@ impl RiskScorer {
         let mut score = 100u32;
 
         // Vulnerability impact (max -40 points)
-        let vuln_penalty = vulnerabilities.iter()
+        let vuln_penalty = vulnerabilities
+            .iter()
             .map(|v| match v.severity {
                 Severity::Critical => 20,
                 Severity::High => 10,
@@ -57,7 +58,7 @@ impl RiskScorer {
         };
         score = score.saturating_sub(popularity_penalty);
 
-        Ok(score.max(0))
+        Ok(score)
     }
 
     /// Propagate risk through dependency chain
@@ -91,9 +92,18 @@ impl RiskScorer {
         let mut score = 100i32;
 
         // Count vulnerabilities by severity
-        let critical_count = vulnerabilities.iter().filter(|v| v.severity == Severity::Critical).count() as i32;
-        let high_count = vulnerabilities.iter().filter(|v| v.severity == Severity::High).count() as i32;
-        let medium_count = vulnerabilities.iter().filter(|v| v.severity == Severity::Medium).count() as i32;
+        let critical_count = vulnerabilities
+            .iter()
+            .filter(|v| v.severity == Severity::Critical)
+            .count() as i32;
+        let high_count = vulnerabilities
+            .iter()
+            .filter(|v| v.severity == Severity::High)
+            .count() as i32;
+        let medium_count = vulnerabilities
+            .iter()
+            .filter(|v| v.severity == Severity::Medium)
+            .count() as i32;
 
         score -= critical_count * 20;
         score -= high_count * 10;

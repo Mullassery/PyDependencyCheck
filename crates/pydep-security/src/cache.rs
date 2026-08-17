@@ -17,11 +17,16 @@ impl VulnerabilityCache {
     pub fn new() -> SecurityResult<Self> {
         let cache_dir = dirs::home_dir()
             .map(|home| home.join(".pydep"))
-            .ok_or_else(|| SecurityError::CacheError("could not resolve home directory".to_string()))?;
+            .ok_or_else(|| {
+                SecurityError::CacheError("could not resolve home directory".to_string())
+            })?;
         fs::create_dir_all(&cache_dir).map_err(|e| {
             SecurityError::CacheError(format!("failed to create cache dir {:?}: {e}", cache_dir))
         })?;
-        Ok(Self { cache_dir, ttl: DEFAULT_TTL })
+        Ok(Self {
+            cache_dir,
+            ttl: DEFAULT_TTL,
+        })
     }
 
     /// Get cache directory
@@ -41,7 +46,13 @@ impl VulnerabilityCache {
         // Filesystem-safe key: keep alphanumerics/./- and replace everything else with '_'
         let safe: String = key
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '.' || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
         self.entries_dir().join(format!("{safe}.json"))
     }
@@ -58,13 +69,20 @@ impl VulnerabilityCache {
     }
 
     /// Write a response body to the cache.
-    pub fn put(&self, ecosystem: &str, package: &str, version: Option<&str>, body: &str) -> SecurityResult<()> {
+    pub fn put(
+        &self,
+        ecosystem: &str,
+        package: &str,
+        version: Option<&str>,
+        body: &str,
+    ) -> SecurityResult<()> {
         let dir = self.entries_dir();
         fs::create_dir_all(&dir)
             .map_err(|e| SecurityError::CacheError(format!("failed to create {:?}: {e}", dir)))?;
         let path = self.entry_path(ecosystem, package, version);
-        fs::write(&path, body)
-            .map_err(|e| SecurityError::CacheError(format!("failed to write cache entry {:?}: {e}", path)))
+        fs::write(&path, body).map_err(|e| {
+            SecurityError::CacheError(format!("failed to write cache entry {:?}: {e}", path))
+        })
     }
 
     /// Remove cached entries older than the TTL (default 7 days).
@@ -125,7 +143,9 @@ mod tests {
             cache_dir: cache_dir.path().to_path_buf(),
             ttl: DEFAULT_TTL,
         };
-        cache.put("PyPI", "django", Some("3.2.0"), "{\"vulns\":[]}").unwrap();
+        cache
+            .put("PyPI", "django", Some("3.2.0"), "{\"vulns\":[]}")
+            .unwrap();
         let got = cache.get("PyPI", "django", Some("3.2.0"));
         assert_eq!(got.as_deref(), Some("{\"vulns\":[]}"));
     }

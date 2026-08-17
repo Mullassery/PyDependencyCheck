@@ -1,5 +1,5 @@
-use std::path::Path;
 use crate::{Dependency, DependencySource, ParserResult};
+use std::path::Path;
 
 /// Parse a constraints.txt file
 pub fn parse_constraints_file(path: &Path) -> ParserResult<Vec<Dependency>> {

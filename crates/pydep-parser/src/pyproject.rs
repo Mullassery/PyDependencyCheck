@@ -1,6 +1,6 @@
-use std::path::Path;
-use crate::{Dependency, DependencySource, ParserResult};
 use super::requirements;
+use crate::{Dependency, ParserResult};
+use std::path::Path;
 
 /// Parse a pyproject.toml file
 pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
@@ -15,7 +15,9 @@ pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
         if let Some(deps) = project.get("dependencies").and_then(|d| d.as_array()) {
             for dep in deps {
                 if let Some(dep_str) = dep.as_str() {
-                    if let Ok(parsed) = requirements::parse_pep508_requirement(dep_str, &source_path) {
+                    if let Ok(parsed) =
+                        requirements::parse_pep508_requirement(dep_str, &source_path)
+                    {
                         dependencies.push(parsed);
                     }
                 }
@@ -23,12 +25,17 @@ pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
         }
 
         // Extract from [project.optional-dependencies]
-        if let Some(optional) = project.get("optional-dependencies").and_then(|o| o.as_table()) {
+        if let Some(optional) = project
+            .get("optional-dependencies")
+            .and_then(|o| o.as_table())
+        {
             for (_key, deps_value) in optional {
                 if let Some(deps_array) = deps_value.as_array() {
                     for dep in deps_array {
                         if let Some(dep_str) = dep.as_str() {
-                            if let Ok(mut parsed) = requirements::parse_pep508_requirement(dep_str, &source_path) {
+                            if let Ok(mut parsed) =
+                                requirements::parse_pep508_requirement(dep_str, &source_path)
+                            {
                                 parsed.dev = true;
                                 dependencies.push(parsed);
                             }
@@ -51,7 +58,9 @@ pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
                         name.to_string()
                     };
 
-                    if let Ok(parsed) = requirements::parse_pep508_requirement(&dep_str, &source_path) {
+                    if let Ok(parsed) =
+                        requirements::parse_pep508_requirement(&dep_str, &source_path)
+                    {
                         dependencies.push(parsed);
                     }
                 }
@@ -67,7 +76,9 @@ pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
                     name.to_string()
                 };
 
-                if let Ok(mut parsed) = requirements::parse_pep508_requirement(&dep_str, &source_path) {
+                if let Ok(mut parsed) =
+                    requirements::parse_pep508_requirement(&dep_str, &source_path)
+                {
                     parsed.dev = true;
                     dependencies.push(parsed);
                 }
@@ -87,7 +98,9 @@ pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
                             name.to_string()
                         };
 
-                        if let Ok(mut parsed) = requirements::parse_pep508_requirement(&dep_str, &source_path) {
+                        if let Ok(mut parsed) =
+                            requirements::parse_pep508_requirement(&dep_str, &source_path)
+                        {
                             parsed.dev = is_dev;
                             dependencies.push(parsed);
                         }
@@ -103,10 +116,24 @@ pub fn parse_pyproject(path: &Path) -> ParserResult<Vec<Dependency>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::io::Write;
+
+    fn write_temp_pyproject(content: &str, suffix: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "pydep-pyproject-test-{}-{}",
+            std::process::id(),
+            suffix
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let file_path = dir.join("pyproject.toml");
+        let mut file = std::fs::File::create(&file_path).unwrap();
+        file.write_all(content.as_bytes()).unwrap();
+        file_path
+    }
 
     #[test]
     fn test_parse_pep621_pyproject() {
-        let _content = r#"
+        let content = r#"
 [project]
 dependencies = [
     "requests>=2.0",
@@ -116,12 +143,20 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=6.0", "black>=22.0"]
 "#;
-        // This would need actual file, skip for now
+        let path = write_temp_pyproject(content, "pep621");
+        let deps = parse_pyproject(&path).unwrap();
+
+        assert!(deps.iter().any(|d| d.name == "requests"));
+        assert!(deps.iter().any(|d| d.name == "flask"));
+        assert!(deps.iter().any(|d| d.name == "pytest"));
+        assert!(deps.iter().any(|d| d.name == "black"));
+
+        std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 
     #[test]
     fn test_parse_poetry_pyproject() {
-        let _content = r#"
+        let content = r#"
 [tool.poetry.dependencies]
 python = "^3.8"
 requests = "^2.28.0"
@@ -131,6 +166,14 @@ flask = {version = "^2.0", extras = ["async"]}
 pytest = "^7.0"
 black = "^22.0"
 "#;
-        // Poetry parsing test
+        let path = write_temp_pyproject(content, "poetry");
+        let deps = parse_pyproject(&path).unwrap();
+
+        // "python" itself should not be treated as a dependency
+        assert!(!deps.iter().any(|d| d.name == "python"));
+        assert!(deps.iter().any(|d| d.name == "requests"));
+        assert!(deps.iter().any(|d| d.name == "flask"));
+
+        std::fs::remove_dir_all(path.parent().unwrap()).unwrap();
     }
 }

@@ -1,7 +1,7 @@
-use petgraph::graph::{DiGraph, NodeIndex};
-use petgraph::algo;
-use std::collections::{HashMap, HashSet, VecDeque};
 use crate::{DependencyNode, GraphError, GraphResult};
+use petgraph::algo;
+use petgraph::graph::{DiGraph, NodeIndex};
+use std::collections::{HashMap, HashSet, VecDeque};
 
 /// Dependency graph using petgraph DiGraph
 pub struct DependencyGraph {
@@ -19,9 +19,18 @@ impl DependencyGraph {
     }
 
     /// Add a dependency node to the graph
-    pub fn add_node(&mut self, name: String, version: Option<String>, is_direct: bool) -> GraphResult<()> {
+    pub fn add_node(
+        &mut self,
+        name: String,
+        version: Option<String>,
+        is_direct: bool,
+    ) -> GraphResult<()> {
         if !self.nodes.contains_key(&name) {
-            let node = DependencyNode { name: name.clone(), version, is_direct };
+            let node = DependencyNode {
+                name: name.clone(),
+                version,
+                is_direct,
+            };
             let idx = self.graph.add_node(node);
             self.nodes.insert(name, idx);
         }
@@ -30,10 +39,14 @@ impl DependencyGraph {
 
     /// Add an edge from one dependency to another
     pub fn add_edge(&mut self, from: &str, to: &str) -> GraphResult<()> {
-        let from_idx = self.nodes.get(from)
+        let from_idx = self
+            .nodes
+            .get(from)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(from.to_string()))?;
-        let to_idx = self.nodes.get(to)
+        let to_idx = self
+            .nodes
+            .get(to)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(to.to_string()))?;
 
@@ -91,7 +104,9 @@ impl DependencyGraph {
 
     /// Get all dependencies (direct + transitive) for a package
     pub fn get_all_dependencies(&self, package: &str) -> GraphResult<Vec<String>> {
-        let start_idx = self.nodes.get(package)
+        let start_idx = self
+            .nodes
+            .get(package)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(package.to_string()))?;
 
@@ -119,7 +134,9 @@ impl DependencyGraph {
 
     /// Get immediate dependencies (one level only)
     pub fn get_direct_dependencies(&self, package: &str) -> GraphResult<Vec<String>> {
-        let start_idx = self.nodes.get(package)
+        let start_idx = self
+            .nodes
+            .get(package)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(package.to_string()))?;
 
@@ -135,10 +152,14 @@ impl DependencyGraph {
 
     /// Get the dependency path from one package to another
     pub fn get_path(&self, from: &str, to: &str) -> GraphResult<Option<Vec<String>>> {
-        let from_idx = self.nodes.get(from)
+        let from_idx = self
+            .nodes
+            .get(from)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(from.to_string()))?;
-        let to_idx = self.nodes.get(to)
+        let to_idx = self
+            .nodes
+            .get(to)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(to.to_string()))?;
 
@@ -182,7 +203,9 @@ impl DependencyGraph {
 
     /// Get reverse dependencies (packages that depend on this one)
     pub fn get_reverse_dependencies(&self, package: &str) -> GraphResult<Vec<String>> {
-        let target_idx = self.nodes.get(package)
+        let target_idx = self
+            .nodes
+            .get(package)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(package.to_string()))?;
 
@@ -200,14 +223,20 @@ impl DependencyGraph {
 
     /// Compute dependency depth (longest path from root to leaf)
     pub fn compute_depth(&self, package: &str) -> GraphResult<usize> {
-        let start_idx = self.nodes.get(package)
+        let start_idx = self
+            .nodes
+            .get(package)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(package.to_string()))?;
 
         self.compute_depth_recursive(start_idx, &mut HashSet::new())
     }
 
-    fn compute_depth_recursive(&self, node_idx: NodeIndex, visited: &mut HashSet<NodeIndex>) -> GraphResult<usize> {
+    fn compute_depth_recursive(
+        &self,
+        node_idx: NodeIndex,
+        visited: &mut HashSet<NodeIndex>,
+    ) -> GraphResult<usize> {
         if visited.contains(&node_idx) {
             return Ok(0); // Cycle detected, return 0
         }
@@ -269,14 +298,23 @@ impl DependencyGraph {
 
     /// Check if a path exists from one package to another
     pub fn has_path(&self, from: &str, to: &str) -> GraphResult<bool> {
-        let from_idx = self.nodes.get(from)
+        let from_idx = self
+            .nodes
+            .get(from)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(from.to_string()))?;
-        let to_idx = self.nodes.get(to)
+        let to_idx = self
+            .nodes
+            .get(to)
             .copied()
             .ok_or_else(|| GraphError::NodeNotFound(to.to_string()))?;
 
-        Ok(algo::has_path_connecting(&self.graph, from_idx, to_idx, None))
+        Ok(algo::has_path_connecting(
+            &self.graph,
+            from_idx,
+            to_idx,
+            None,
+        ))
     }
 }
 
@@ -293,7 +331,9 @@ mod tests {
     #[test]
     fn test_graph_creation() {
         let mut graph = DependencyGraph::new();
-        graph.add_node("requests".to_string(), Some("2.32.0".to_string()), true).unwrap();
+        graph
+            .add_node("requests".to_string(), Some("2.32.0".to_string()), true)
+            .unwrap();
         assert_eq!(graph.node_count(), 1);
     }
 
@@ -301,7 +341,9 @@ mod tests {
     fn test_add_edge() {
         let mut graph = DependencyGraph::new();
         graph.add_node("app".to_string(), None, true).unwrap();
-        graph.add_node("requests".to_string(), Some("2.32.0".to_string()), false).unwrap();
+        graph
+            .add_node("requests".to_string(), Some("2.32.0".to_string()), false)
+            .unwrap();
         graph.add_edge("app", "requests").unwrap();
         assert_eq!(graph.edge_count(), 1);
     }

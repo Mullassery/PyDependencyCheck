@@ -5,10 +5,10 @@
 //! - PyPI advisories
 //! - CVSS scoring
 
-pub mod osv;
-pub mod scoring;
 pub mod cache;
 pub mod errors;
+pub mod osv;
+pub mod scoring;
 
 pub use errors::{SecurityError, SecurityResult};
 pub use osv::OsvClient;
@@ -26,7 +26,9 @@ pub struct Vulnerability {
     pub fix_version: Option<String>,
 }
 
-#[derive(Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, serde::Serialize, serde::Deserialize, PartialEq, Eq, PartialOrd, Ord,
+)]
 pub enum Severity {
     Critical = 4,
     High = 3,

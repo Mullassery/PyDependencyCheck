@@ -4,8 +4,19 @@ use pyo3::prelude::*;
 use std::path::Path;
 
 const SKIP_DIRS: &[&str] = &[
-    ".git", "__pycache__", ".venv", "venv", "env", "node_modules", "target", ".tox", ".mypy_cache",
-    ".pytest_cache", "build", "dist", "site-packages",
+    ".git",
+    "__pycache__",
+    ".venv",
+    "venv",
+    "env",
+    "node_modules",
+    "target",
+    ".tox",
+    ".mypy_cache",
+    ".pytest_cache",
+    "build",
+    "dist",
+    "site-packages",
 ];
 
 fn collect_py_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> std::io::Result<()> {
@@ -59,7 +70,10 @@ pub fn scan_imports(project_path: &str) -> PyResult<Vec<String>> {
 /// the project's source tree. Returns (package_name, confidence) pairs,
 /// confidence being one of "High" | "Medium" | "Low".
 #[pyfunction]
-pub fn find_dead_packages(project_path: &str, installed: Vec<String>) -> PyResult<Vec<(String, String)>> {
+pub fn find_dead_packages(
+    project_path: &str,
+    installed: Vec<String>,
+) -> PyResult<Vec<(String, String)>> {
     let imports = scan_imports(project_path)?;
 
     let dead = DeadCodeDetector::find_dead_packages_with_confidence(imports, installed)
@@ -78,7 +92,7 @@ pub fn find_dead_packages(project_path: &str, installed: Vec<String>) -> PyResul
         .collect())
 }
 
-pub fn register_ast(module: &PyModule) -> PyResult<()> {
+pub fn register_ast(module: &Bound<'_, pyo3::types::PyModule>) -> PyResult<()> {
     module.add_function(wrap_pyfunction!(scan_imports, module)?)?;
     module.add_function(wrap_pyfunction!(find_dead_packages, module)?)?;
     Ok(())

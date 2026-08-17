@@ -1,6 +1,6 @@
-use crate::{ImportInfo, AstResult};
-use std::collections::{HashMap, HashSet};
 use super::imports::extract_package_name;
+use crate::ImportInfo;
+use std::collections::{HashMap, HashSet};
 
 /// Track which packages are actually used in the codebase
 #[derive(Debug)]
@@ -36,7 +36,7 @@ impl UsageAnalysis {
             analysis
                 .import_locations
                 .entry(package.clone())
-                .or_insert_with(Vec::new)
+                .or_default()
                 .push((import.file.clone(), import.line));
 
             analysis.imported_packages.insert(package);
@@ -47,7 +47,8 @@ impl UsageAnalysis {
 
     /// Check if a package is used
     pub fn is_used(&self, package: &str) -> bool {
-        self.imported_packages.contains(&package.to_lowercase().replace("_", "-"))
+        self.imported_packages
+            .contains(&package.to_lowercase().replace("_", "-"))
     }
 
     /// Get usage count for a package
@@ -84,7 +85,10 @@ impl UsageAnalysis {
     /// Returns packages that:
     /// 1. Are declared but not imported (high confidence)
     /// 2. Are barely used (low confidence)
-    pub fn find_potential_dead_deps(&self, declared_packages: &[&str]) -> Vec<(String, Confidence)> {
+    pub fn find_potential_dead_deps(
+        &self,
+        declared_packages: &[&str],
+    ) -> Vec<(String, Confidence)> {
         let mut dead_deps = Vec::new();
 
         for package in declared_packages {
@@ -114,12 +118,46 @@ impl UsageAnalysis {
     fn is_stdlib(package: &str) -> bool {
         matches!(
             package.to_lowercase().as_str(),
-            "os" | "sys" | "json" | "re" | "math" | "datetime" | "time" | "collections" |
-            "itertools" | "functools" | "pathlib" | "tempfile" | "shutil" | "subprocess" |
-            "threading" | "multiprocessing" | "asyncio" | "urllib" | "http" | "email" |
-            "socket" | "ssl" | "base64" | "hashlib" | "hmac" | "secrets" | "io" | "csv" |
-            "xml" | "html" | "urllib3" | "typing" | "dataclasses" | "abc" | "enum" |
-            "warnings" | "logging" | "unittest" | "doctest" | "pdb" | "traceback"
+            "os" | "sys"
+                | "json"
+                | "re"
+                | "math"
+                | "datetime"
+                | "time"
+                | "collections"
+                | "itertools"
+                | "functools"
+                | "pathlib"
+                | "tempfile"
+                | "shutil"
+                | "subprocess"
+                | "threading"
+                | "multiprocessing"
+                | "asyncio"
+                | "urllib"
+                | "http"
+                | "email"
+                | "socket"
+                | "ssl"
+                | "base64"
+                | "hashlib"
+                | "hmac"
+                | "secrets"
+                | "io"
+                | "csv"
+                | "xml"
+                | "html"
+                | "urllib3"
+                | "typing"
+                | "dataclasses"
+                | "abc"
+                | "enum"
+                | "warnings"
+                | "logging"
+                | "unittest"
+                | "doctest"
+                | "pdb"
+                | "traceback"
         )
     }
 
@@ -127,8 +165,20 @@ impl UsageAnalysis {
     fn is_dev_tool(package: &str) -> bool {
         matches!(
             package.to_lowercase().as_str(),
-            "pytest" | "pytest-cov" | "black" | "ruff" | "mypy" | "flake8" | "isort" |
-            "sphinx" | "tox" | "coverage" | "mock" | "faker" | "factory-boy" | "hypothesis"
+            "pytest"
+                | "pytest-cov"
+                | "black"
+                | "ruff"
+                | "mypy"
+                | "flake8"
+                | "isort"
+                | "sphinx"
+                | "tox"
+                | "coverage"
+                | "mock"
+                | "faker"
+                | "factory-boy"
+                | "hypothesis"
         )
     }
 }
@@ -195,7 +245,10 @@ mod tests {
 
         let missing = analysis.find_missing_imports(&["requests", "flask"]);
         // Should find unknown_package as missing (not declared)
-        assert!(missing.len() > 0, "Should find at least one missing package");
+        assert!(
+            !missing.is_empty(),
+            "Should find at least one missing package"
+        );
     }
 
     #[test]

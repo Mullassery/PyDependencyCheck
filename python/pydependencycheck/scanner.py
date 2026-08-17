@@ -54,17 +54,53 @@ class DependencyScanner:
         "uv.lock",
     ]
 
+    # Directories that should never be walked into when auto-detecting
+    # dependency files: virtual environments and VCS/build/cache dirs
+    # commonly nested inside a real project. Without this, a recursive
+    # `**/requirements.txt`-style glob on "." also matches every dependency
+    # manifest bundled inside an in-project venv's installed packages
+    # (pip/setuptools ship their own requirements.txt/pyproject.toml test
+    # fixtures), producing bogus, unrelated results.
+    IGNORED_DIRS = {
+        ".git",
+        ".hg",
+        ".svn",
+        "venv",
+        ".venv",
+        "env",
+        ".env",
+        "node_modules",
+        "__pycache__",
+        ".tox",
+        ".nox",
+        "build",
+        "dist",
+        ".eggs",
+        "site-packages",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+    }
+
     def __init__(self, project_path: str):
         self.project_path = Path(project_path).resolve()
         self.found_files: List[Path] = []
         self.parsed_deps: List[Dict[str, Any]] = []
+
+    def _is_ignored(self, path: Path) -> bool:
+        """Check whether a path falls inside an ignored directory."""
+        try:
+            relative_parts = path.relative_to(self.project_path).parts
+        except ValueError:
+            relative_parts = path.parts
+        return any(part in self.IGNORED_DIRS or part.endswith(".egg-info") for part in relative_parts)
 
     def find_dependency_files(self) -> List[Path]:
         """Auto-detect dependency declaration files"""
         found = []
         for pattern in self.DEPENDENCY_FILES:
             matches = list(self.project_path.glob(f"**/{pattern}"))
-            found.extend(matches)
+            found.extend(m for m in matches if not self._is_ignored(m))
 
         self.found_files = found
         logger.info(f"Found {len(found)} dependency files: {[f.name for f in found]}")
@@ -78,19 +114,43 @@ class DependencyScanner:
             logger.info(f"Parsing {file_path.relative_to(self.project_path)}")
             deps = self._parse_file(file_path)
             for dep in deps:
-                if dep["name"] not in dependencies:
-                    dependencies[dep["name"]] = dep
+                name = dep["name"]
+                if name not in dependencies:
+                    # "sources" tracks every file that declares this
+                    # package (a dep can legitimately appear in both
+                    # requirements.txt and pyproject.toml); "source"
+                    # (singular) is kept as the first-seen file for
+                    # backwards compatibility with callers that only
+                    # display one location.
+                    dep["sources"] = [dep.get("source", str(file_path))]
+                    dependencies[name] = dep
                 else:
                     # Merge version constraints if seen in multiple files
-                    existing = dependencies[dep["name"]]
+                    existing = dependencies[name]
+                    existing.setdefault("sources", [existing.get("source", str(file_path))])
                     existing["sources"].append(dep.get("source", str(file_path)))
 
         self.parsed_deps = list(dependencies.values())
         return self.parsed_deps
 
+    # File types the Rust PEP 508 parser (crates/pydep-parser) fully
+    # supports: requirements*.txt, constraints.txt, pyproject.toml. It
+    # correctly handles every version operator (>=, <=, ~=, !=, ...), extras,
+    # and environment markers -- the pure-Python fallback below only ever
+    # recognized "==". setup.py/setup.cfg parsing isn't implemented on
+    # either side yet (see `_parse_setup_file`).
+    _RUST_PARSEABLE = ("constraints.txt", "pyproject.toml")
+
     def _parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
         """Parse a single dependency file"""
         file_name = file_path.name.lower()
+        rust_supported = "requirements" in file_name or file_name in self._RUST_PARSEABLE
+
+        if HAS_RUST_BACKEND and rust_supported:
+            try:
+                return self._parse_file_rust(file_path)
+            except Exception as e:
+                logger.warning(f"Rust parser failed for {file_path}, falling back to Python parser: {e}")
 
         if "requirements" in file_name or file_name == "constraints.txt":
             return self._parse_requirements_txt(file_path)
@@ -101,6 +161,38 @@ class DependencyScanner:
         else:
             logger.warning(f"Unsupported file type: {file_name}")
             return []
+
+    def _parse_file_rust(self, file_path: Path) -> List[Dict[str, Any]]:
+        """Parse using the Rust PEP 508 parser.
+
+        This is the real, fully-tested parser (7 unit tests across
+        requirements.rs/pyproject.rs/constraint.rs) and correctly handles
+        version operators the pure-Python fallback above does not (e.g.
+        `flask>=2.0.0,<3.0.0` was previously mis-parsed as a single package
+        named "flask>=2.0.0,<3.0.0" with no version, since the fallback only
+        ever split on "==").
+        """
+        source = str(file_path.relative_to(self.project_path))
+        file_name = file_path.name.lower()
+        rust_deps = _pydependencycheck.parser.parse_file(str(file_path))
+
+        result = []
+        for dep in rust_deps:
+            # requirements-dev.txt / requirements-test.txt should still be
+            # flagged as dev dependencies by filename, same as the
+            # pure-Python fallback -- the Rust requirements.txt parser
+            # doesn't infer this from the filename itself.
+            dev = dep.dev or ("dev" in file_name or "test" in file_name)
+            result.append(
+                {
+                    "name": dep.name,
+                    "version": dep.version,
+                    "source": source,
+                    "direct": dep.direct,
+                    "dev": dev,
+                }
+            )
+        return result
 
     def _parse_requirements_txt(self, file_path: Path) -> List[Dict[str, Any]]:
         """Parse requirements.txt format"""
@@ -284,9 +376,7 @@ class DependencyScanner:
         counts: Dict[str, int] = {}
         for dep in self.parsed_deps:
             normalized = dep["name"].lower().replace("_", "-")
-            counts[dep["name"]] = sum(
-                1 for pkg in imported if pkg.lower().replace("_", "-") == normalized
-            )
+            counts[dep["name"]] = sum(1 for pkg in imported if pkg.lower().replace("_", "-") == normalized)
         return counts
 
     def find_dead_dependencies(self) -> List[Dict[str, str]]:
@@ -319,11 +409,7 @@ class DependencyScanner:
             logger.warning("Rust backend not available, skipping vulnerability scan")
             return []
 
-        pinned = [
-            (dep["name"], dep["version"])
-            for dep in self.parsed_deps
-            if dep.get("version")
-        ]
+        pinned = [(dep["name"], dep["version"]) for dep in self.parsed_deps if dep.get("version")]
         if not pinned:
             return []
 

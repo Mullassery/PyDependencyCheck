@@ -3,9 +3,82 @@
 from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
+
+import requests
 
 logger = logging.getLogger(__name__)
+
+# A package with no release in this many days is considered stale for the
+# purposes of the "maintenance" health factor.
+STALE_THRESHOLD_DAYS = 365
+
+
+class PackageStalenessChecker:
+    """Determine dependency staleness from real PyPI release metadata.
+
+    A package is "stale" if its most recent release predates
+    `STALE_THRESHOLD_DAYS`. This mirrors the network-lookup pattern already
+    used by `LicenseAnalyzer`/`VulnerabilityAnalyzer`: a short-timeout GET
+    against PyPI's public JSON API, with failures logged and treated as
+    "unknown" (never counted as stale) rather than raising.
+    """
+
+    PYPI_URL = "https://pypi.org/pypi/{name}/json"
+
+    def __init__(self, timeout: float = 5.0):
+        self.timeout = timeout
+
+    def last_release_date(self, package_name: str) -> Optional[datetime]:
+        """Return the upload time of the most recent release, if known."""
+        try:
+            response = requests.get(self.PYPI_URL.format(name=package_name), timeout=self.timeout)
+            response.raise_for_status()
+            data = response.json()
+        except Exception as e:
+            logger.debug(f"Failed to fetch PyPI metadata for {package_name}: {e}")
+            return None
+
+        latest_upload: Optional[datetime] = None
+        releases = data.get("releases", {})
+        for files in releases.values():
+            for file_info in files:
+                upload_time = file_info.get("upload_time_iso_8601") or file_info.get("upload_time")
+                if not upload_time:
+                    continue
+                try:
+                    parsed = datetime.fromisoformat(upload_time.replace("Z", "+00:00"))
+                except ValueError:
+                    continue
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=timezone.utc)
+                if latest_upload is None or parsed > latest_upload:
+                    latest_upload = parsed
+
+        return latest_upload
+
+    def is_stale(self, package_name: str, days_threshold: int = STALE_THRESHOLD_DAYS) -> bool:
+        """Return True only when we positively know the package is stale.
+
+        Unknown (network failure, no releases found) intentionally returns
+        False rather than penalizing a package we couldn't actually check.
+        """
+        last_release = self.last_release_date(package_name)
+        if last_release is None:
+            return False
+        age_days = (datetime.now(timezone.utc) - last_release).days
+        return age_days > days_threshold
+
+    def find_stale_packages(self, dependencies: List[Dict], days_threshold: int = STALE_THRESHOLD_DAYS) -> List[str]:
+        """Find declared dependencies with no release in `days_threshold` days."""
+        stale = []
+        for dep in dependencies:
+            name = dep.get("name")
+            if not name:
+                continue
+            if self.is_stale(name, days_threshold=days_threshold):
+                stale.append(name)
+        return stale
 
 
 @dataclass
@@ -205,10 +278,9 @@ class HealthAnalyzer:
 
         # Remove dead dependencies
         if dead:
-            recommendations.append(
-                f"Remove or audit {len(dead[:3])} unused dependencies "
-                f"({'and ' + str(len(dead) - 3) + ' more' if len(dead) > 3 else ''})"
-            )
+            shown = ", ".join(dead[:3])
+            suffix = f" (and {len(dead) - 3} more)" if len(dead) > 3 else ""
+            recommendations.append(f"Remove or audit {len(dead)} unused dependencies: {shown}{suffix}")
 
         # Reduce complexity
         if len(critical) + len(stale) + len(dead) > 10:

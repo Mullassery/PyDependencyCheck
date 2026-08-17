@@ -6,6 +6,8 @@ import json
 import hashlib
 import logging
 
+from . import __version__
+
 logger = logging.getLogger(__name__)
 
 try:
@@ -59,7 +61,7 @@ class SBOMGenerator:
                     {
                         "vendor": "PyDependencyCheck",
                         "name": "pydependencycheck",
-                        "version": "0.1.0",
+                        "version": __version__,
                     }
                 ],
                 "component": {
@@ -117,7 +119,7 @@ class SBOMGenerator:
             "documentNamespace": f"https://pydependencycheck.io/sbom/{project_name}/{datetime.now().isoformat()}",
             "creationInfo": {
                 "created": datetime.now().isoformat(),
-                "creators": ["Tool: pydependencycheck-0.1.0"],
+                "creators": [f"Tool: pydependencycheck-{__version__}"],
                 "licenseListVersion": "3.19",
             },
             "packages": [

@@ -46,6 +46,16 @@ class SnapshotStorage:
         cursor = conn.cursor()
 
         # Snapshots: Full dependency trees with metadata
+        #
+        # Deliberately no UNIQUE constraint on graph_hash or
+        # (project_path, timestamp): history/timeline tracking needs to
+        # store a new snapshot every time a scan runs, even when nothing
+        # changed since the last one (that "nothing changed" data point is
+        # exactly what `drift`/`history` need to show a stable trend).
+        # `timestamp` also only has one-second resolution, so two scans
+        # run in quick succession -- entirely normal in CI or in tests --
+        # would otherwise collide and the second save would be silently
+        # dropped (`save_snapshot` returning -1 without raising).
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS snapshots (
@@ -56,14 +66,21 @@ class SnapshotStorage:
                 total_deps INTEGER,
                 direct_deps INTEGER,
                 transitive_deps INTEGER,
-                graph_hash TEXT UNIQUE,
-                health_score INTEGER,
-                UNIQUE(project_path, timestamp)
+                graph_hash TEXT,
+                health_score INTEGER
             )
         """
         )
 
         # Vulnerability cache (7-day TTL)
+        #
+        # Note: SQLite (unlike MySQL) does not support an inline
+        # `INDEX(...)` column-style declaration inside CREATE TABLE -- it's
+        # a syntax error there, which meant this table (and every command
+        # that touches SnapshotStorage: `snapshot`, `history`, `drift`,
+        # `scan --save-snapshot`) failed unconditionally with
+        # "near INDEX: syntax error" the moment SnapshotStorage() was
+        # constructed. Real indexes must be created separately below.
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS vulnerabilities (
@@ -77,10 +94,12 @@ class SnapshotStorage:
                 description TEXT,
                 affected_versions_json TEXT,
                 first_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
-                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-                INDEX(package_name, package_version)
+                last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         """
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_vulnerabilities_pkg ON vulnerabilities(package_name, package_version)"
         )
 
         # Usage analysis
@@ -93,11 +112,11 @@ class SnapshotStorage:
                 line_number INTEGER,
                 usage_type TEXT,
                 context TEXT,
-                snapshot_id INTEGER REFERENCES snapshots(id),
-                INDEX(package_name, file_path)
+                snapshot_id INTEGER REFERENCES snapshots(id)
             )
         """
         )
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_analysis_pkg ON usage_analysis(package_name, file_path)")
 
         # Blame/history log
         cursor.execute(

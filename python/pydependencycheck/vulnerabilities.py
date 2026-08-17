@@ -1,4 +1,13 @@
-"""Vulnerability analysis and risk assessment"""
+"""Vulnerability analysis and risk assessment
+
+NOTE: This is a pure-Python OSV.dev client kept for reference/library use.
+The CLI's `health` and `gate` commands do *not* use this module -- they use
+`DependencyScanner.check_vulnerabilities()`, which calls the Rust
+`pydep-security` crate's OSV client (faster, and covered by the Rust test
+suite). This module currently has no test coverage of its own and is not
+imported anywhere in the CLI; it's left in place as a documented,
+honestly-labeled pure-Python fallback rather than silently dead code.
+"""
 
 from typing import Dict, List, Optional, Tuple
 import requests

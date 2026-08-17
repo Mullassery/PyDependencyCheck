@@ -1,9 +1,9 @@
 """PyDependencyCheck: Dependency Intelligence and Governance Platform"""
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 __author__ = "Georgi Mammen Mullassery"
 __email__ = "mullassery@gmail.com"
-__license__ = "MIT"
+__license__ = "Proprietary"
 
 try:
     from ._pydependencycheck import parser, graph, security

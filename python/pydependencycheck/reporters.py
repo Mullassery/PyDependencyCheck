@@ -129,15 +129,13 @@ class HtmlReporter(Reporter):
             # data (package names/versions/sources parsed from
             # requirements.txt, pyproject.toml, etc.) and must be
             # HTML-entity-encoded before interpolation to prevent stored XSS.
-            rows.append(
-                f"""                <tr>
+            rows.append(f"""                <tr>
                     <td><strong>{escape(dep.get('name'))}</strong></td>
                     <td>{escape(dep.get('version', '—'))}</td>
                     <td><span class="badge {badge_class}">{escape(dep_type)}</span></td>
                     <td>{escape(source)}</td>
                 </tr>
-"""
-            )
+""")
 
         html_doc += "".join(rows)
 

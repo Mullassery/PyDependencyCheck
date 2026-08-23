@@ -56,8 +56,7 @@ class SnapshotStorage:
         # run in quick succession -- entirely normal in CI or in tests --
         # would otherwise collide and the second save would be silently
         # dropped (`save_snapshot` returning -1 without raising).
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS snapshots (
                 id INTEGER PRIMARY KEY,
                 project_path TEXT NOT NULL,
@@ -69,8 +68,7 @@ class SnapshotStorage:
                 graph_hash TEXT,
                 health_score INTEGER
             )
-        """
-        )
+        """)
 
         # Vulnerability cache (7-day TTL)
         #
@@ -81,8 +79,7 @@ class SnapshotStorage:
         # `scan --save-snapshot`) failed unconditionally with
         # "near INDEX: syntax error" the moment SnapshotStorage() was
         # constructed. Real indexes must be created separately below.
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS vulnerabilities (
                 id INTEGER PRIMARY KEY,
                 package_name TEXT NOT NULL,
@@ -96,15 +93,13 @@ class SnapshotStorage:
                 first_seen DATETIME DEFAULT CURRENT_TIMESTAMP,
                 last_updated DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
-        )
+        """)
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_vulnerabilities_pkg ON vulnerabilities(package_name, package_version)"
         )
 
         # Usage analysis
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS usage_analysis (
                 id INTEGER PRIMARY KEY,
                 package_name TEXT NOT NULL,
@@ -114,13 +109,11 @@ class SnapshotStorage:
                 context TEXT,
                 snapshot_id INTEGER REFERENCES snapshots(id)
             )
-        """
-        )
+        """)
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_analysis_pkg ON usage_analysis(package_name, file_path)")
 
         # Blame/history log
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS blame_log (
                 id INTEGER PRIMARY KEY,
                 package_name TEXT NOT NULL,
@@ -132,12 +125,10 @@ class SnapshotStorage:
                 message TEXT,
                 snapshot_id INTEGER REFERENCES snapshots(id)
             )
-        """
-        )
+        """)
 
         # Drift baselines
-        cursor.execute(
-            """
+        cursor.execute("""
             CREATE TABLE IF NOT EXISTS drift_baselines (
                 id INTEGER PRIMARY KEY,
                 project_path TEXT UNIQUE NOT NULL,
@@ -146,8 +137,7 @@ class SnapshotStorage:
                 baseline_snapshot_id INTEGER REFERENCES snapshots(id),
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
-        """
-        )
+        """)
 
         conn.commit()
         conn.close()

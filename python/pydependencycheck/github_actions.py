@@ -1,9 +1,8 @@
 """GitHub Actions integration for CI/CD"""
 
-import os
-import json
 import logging
-from typing import Dict, List, Any, Optional
+import os
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

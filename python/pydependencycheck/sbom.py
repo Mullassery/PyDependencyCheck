@@ -1,19 +1,18 @@
 """SBOM (Software Bill of Materials) generation and signing"""
 
-from typing import Dict, List, Any, Optional
-from datetime import datetime
-import json
 import hashlib
+import json
 import logging
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 from . import __version__
 
 logger = logging.getLogger(__name__)
 
 try:
-    from cryptography.hazmat.primitives import hashes
-    from cryptography.hazmat.primitives.asymmetric import rsa, padding
-    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives import hashes, serialization
+    from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
     HAS_CRYPTO = True
 except ImportError:
@@ -84,7 +83,7 @@ class SBOMGenerator:
         """Generate SPDX JSON SBOM"""
         packages = []
         relationships = []
-        document_id = f"SPDXRef-DOCUMENT"
+        document_id = "SPDXRef-DOCUMENT"
         project_id = f"SPDXRef-{project_name.replace(' ', '-')}"
 
         for i, dep in enumerate(dependencies):

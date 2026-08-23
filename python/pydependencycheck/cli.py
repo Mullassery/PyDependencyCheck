@@ -1,23 +1,23 @@
 """PyDependencyCheck CLI: Command-line interface for dependency analysis"""
 
-import click
 import json
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
-import sys
 
-from .scanner import DependencyScanner, ScanResult
-from .reporters import JsonReporter, HtmlReporter, MarkdownReporter
-from .storage import SnapshotStorage
-from .git_integration import GitIntegration
-from .sbom import SBOMGenerator, SBOMSigner
-from .licenses import LicenseAnalyzer
-from .health import HealthAnalyzer, PackageStalenessChecker
-from .github_actions import GitHubActionsReporter
-from .telemetry import TelemetryConfig, TelemetryManager
+import click
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
+
+from .git_integration import GitIntegration
+from .github_actions import GitHubActionsReporter
+from .health import HealthAnalyzer, PackageStalenessChecker
+from .licenses import LicenseAnalyzer
+from .reporters import HtmlReporter, JsonReporter, MarkdownReporter
+from .sbom import SBOMGenerator, SBOMSigner
+from .scanner import DependencyScanner, ScanResult
+from .storage import SnapshotStorage
+from .telemetry import TelemetryConfig, TelemetryManager
 
 console = Console()
 
@@ -104,7 +104,7 @@ def why(package: str, path: str):
     console.print(f"  Source: {dep.get('source', 'unknown')}")
 
     if git.is_git_repo() and blame_info.commit_hash:
-        console.print(f"\n[bold]Introduced by:[/bold]")
+        console.print("\n[bold]Introduced by:[/bold]")
         console.print(f"  Commit: {blame_info.commit_short}")
         console.print(f"  Author: {blame_info.author}")
         console.print(f"  Date: {blame_info.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
@@ -137,7 +137,7 @@ def trace(package: str, path: str):
         console.print(f"  Type: {dep_type}")
         console.print(f"  Declared in: {dep.get('source', 'unknown')}")
     else:
-        console.print(f"  [yellow]Not currently declared in this project[/yellow]")
+        console.print("  [yellow]Not currently declared in this project[/yellow]")
 
     git = GitIntegration(path)
     if not git.is_git_repo():
@@ -291,7 +291,7 @@ def health(path: str, offline: bool, save_snapshot: bool, otel: bool, otel_expor
     if result.cycles:
         console.print(f"\n[yellow]⚠ {len(result.cycles)} cycles detected[/yellow]")
     else:
-        console.print(f"\n[green]✓ No circular dependencies[/green]")
+        console.print("\n[green]✓ No circular dependencies[/green]")
 
     if offline:
         console.print("\n[dim]--offline: vulnerability and staleness checks skipped[/dim]")
@@ -311,13 +311,11 @@ def health(path: str, offline: bool, save_snapshot: bool, otel: bool, otel_expor
 def snapshot(path: str, save: bool):
     """Manage dependency snapshots"""
     from .storage import SnapshotStorage
-    from .dashboard import CLIDashboard
 
     scanner = DependencyScanner(path)
     result = scanner.scan()
 
     storage = SnapshotStorage()
-    dashboard = CLIDashboard(path)
 
     if save:
         with console.status("[bold]Saving snapshot...[/bold]"):
@@ -328,7 +326,7 @@ def snapshot(path: str, save: bool):
         # Show latest snapshot info
         latest = storage.get_latest_snapshot(path)
         if latest:
-            console.print(f"[bold]Latest Snapshot:[/bold]")
+            console.print("[bold]Latest Snapshot:[/bold]")
             console.print(f"  Time: {latest.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
             console.print(f"  Dependencies: {latest.dependencies.get('total_count', 'unknown')}")
             console.print(f"  Health: {latest.health_score or 'unknown'}/100")
@@ -341,10 +339,8 @@ def snapshot(path: str, save: bool):
 @click.option("--days", "-d", type=int, default=30, help="Number of days to show")
 def history(path: str, days: int):
     """Show dependency history and trends"""
-    from .storage import SnapshotStorage
     from .dashboard import CLIDashboard
 
-    storage = SnapshotStorage()
     dashboard = CLIDashboard(path)
 
     dashboard.show_timeline(path, days=days)
@@ -355,8 +351,8 @@ def history(path: str, days: int):
 @click.option("--baseline", "-b", type=str, default="main", help="Baseline name")
 def drift(path: str, baseline: str):
     """Detect dependency drift since baseline"""
-    from .storage import SnapshotStorage
     from .dashboard import CLIDashboard
+    from .storage import SnapshotStorage
 
     storage = SnapshotStorage()
     dashboard = CLIDashboard(path)
@@ -549,12 +545,12 @@ def gate(path: str, min_health: int, max_dead_deps: int, offline: bool):
 def _format_table_report(result: ScanResult) -> str:
     """Format scan result as a table"""
     lines = [
-        f"Dependency Scan Report",
+        "Dependency Scan Report",
         f"{'='*60}",
         f"Total dependencies: {len(result.dependencies)}",
         f"  Direct: {result.direct_count}",
         f"  Transitive: {result.transitive_count}",
-        f"",
+        "",
     ]
 
     if result.dependencies:

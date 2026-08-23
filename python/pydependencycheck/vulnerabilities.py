@@ -9,11 +9,12 @@ imported anywhere in the CLI; it's left in place as a documented,
 honestly-labeled pure-Python fallback rather than silently dead code.
 """
 
-from typing import Dict, List, Optional, Tuple
-import requests
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
+from typing import Dict, List, Optional, Tuple
+
+import requests
 
 logger = logging.getLogger(__name__)
 

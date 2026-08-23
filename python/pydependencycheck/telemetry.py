@@ -1,17 +1,17 @@
 """OpenTelemetry instrumentation for observability"""
 
 import logging
-from typing import Optional, Dict, Any
 from contextlib import contextmanager
 from datetime import datetime
+from typing import Any, Optional
 
 # Optional OTEL imports
 try:
-    from opentelemetry import trace, metrics
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor
+    from opentelemetry import metrics, trace
     from opentelemetry.sdk.metrics import MeterProvider
     from opentelemetry.sdk.metrics.export import ConsoleMetricExporter, PeriodicExportingMetricReader
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter, SimpleSpanProcessor
 
     HAS_OTEL = True
 except ImportError:
@@ -21,8 +21,8 @@ except ImportError:
 # client, jaeger thrift) that aren't required for local/CI usage of the
 # "console" exporter, so they're imported lazily and independently guarded.
 try:
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
     from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 
     HAS_OTLP = True
 except ImportError:
@@ -195,7 +195,7 @@ class TelemetryManager:
             try:
                 yield span
                 span.set_attribute("status", "success")
-            except Exception as e:
+            except Exception:
                 span.set_attribute("status", "error")
                 raise
 
@@ -212,7 +212,7 @@ class TelemetryManager:
             try:
                 yield span
                 span.set_attribute("status", "success")
-            except Exception as e:
+            except Exception:
                 span.set_attribute("status", "error")
                 raise
 

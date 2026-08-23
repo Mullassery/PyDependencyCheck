@@ -1,9 +1,8 @@
 """Dependency Scanner: Orchestrates parsing, analysis, and reporting"""
 
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Set
 import logging
-import json
+from pathlib import Path
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

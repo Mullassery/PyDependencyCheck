@@ -3,8 +3,8 @@
 import html
 import json
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List
 
 
 def escape(value: Any) -> str:

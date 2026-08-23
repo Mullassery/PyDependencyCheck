@@ -1,9 +1,10 @@
 """License detection and compliance checking"""
 
-from typing import Dict, List, Optional, Tuple
-import requests
 import logging
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +107,7 @@ class LicenseAnalyzer:
             version=version_used,
             licenses=licenses,
             primary_license=licenses[0] if licenses else None,
-            is_spdx_valid=any(self._is_spdx_license(l) for l in licenses),
+            is_spdx_valid=any(self._is_spdx_license(lic) for lic in licenses),
         )
 
         return result

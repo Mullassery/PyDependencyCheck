@@ -6,7 +6,7 @@ __email__ = "mullassery@gmail.com"
 __license__ = "Proprietary"
 
 try:
-    from ._pydependencycheck import parser, graph, security
+    from ._pydependencycheck import graph, parser, security
 except ImportError:
     # Rust extension not built yet
     parser = None

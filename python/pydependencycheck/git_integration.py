@@ -1,12 +1,12 @@
 """Git integration for blame tracking and history analysis"""
 
-from pathlib import Path
-from typing import Dict, Any, List, Optional
 import logging
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 try:
-    from git import Repo, Commit, GitCommandError
+    from git import Commit, GitCommandError, Repo
 except ImportError:
     Repo = None
     Commit = None

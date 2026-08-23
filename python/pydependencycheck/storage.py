@@ -1,12 +1,12 @@
 """Storage layer for snapshots, caching, and drift tracking"""
 
-import sqlite3
-from pathlib import Path
-from typing import List, Dict, Any, Optional, Tuple
-from datetime import datetime, timedelta
-import json
 import hashlib
+import json
 import logging
+import sqlite3
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -249,7 +249,6 @@ class SnapshotStorage:
 
     def detect_drift(self, project_path: str, current_snapshot: DriftSnapshot) -> Dict[str, Any]:
         """Detect changes since last snapshot or baseline"""
-        baseline = self.get_baseline(project_path)
         latest = self.get_latest_snapshot(project_path)
 
         if not latest or latest.id == current_snapshot.id:

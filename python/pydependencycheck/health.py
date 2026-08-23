@@ -1,9 +1,9 @@
 """Health score calculation and dependency analysis"""
 
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from datetime import datetime, timezone
+from typing import Dict, List, Optional
 
 import requests
 

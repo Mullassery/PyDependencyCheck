@@ -1,18 +1,18 @@
 """CLI Dashboard using Rich for real-time monitoring"""
 
-from typing import Dict, List, Optional
-from datetime import datetime, timedelta
-from rich.console import Console
-from rich.table import Table
-from rich.panel import Panel
-from rich.layout import Layout
-from rich.live import Live
-from rich.text import Text
-from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 import time
+from datetime import datetime, timedelta
+from typing import Dict, Optional
 
-from .storage import SnapshotStorage
+from rich.console import Console
+from rich.layout import Layout
+from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+from rich.text import Text
+
 from .health import HealthAnalyzer
+from .storage import SnapshotStorage
 
 console = Console()
 

@@ -16,10 +16,22 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64
-          - os: macos-13
-            target: x86_64
+
+          # Both macOS legs run on macos-14 (Apple Silicon). The Intel leg
+          # used to run natively on macos-13, but that image was queuing
+          # forever with zero progress -- the same "no runner capacity"
+          # signature the previously-retired macos-12 showed (confirmed:
+          # the other 3 matrix legs on the same run completed in minutes
+          # while this one sat queued for 25+ minutes). Rather than chase
+          # whichever specific macOS image happens to still be hosted,
+          # cross-compile the Intel wheel from Apple Silicon via
+          # maturin-action, which doesn't depend on an actual Intel runner
+          # existing.
           - os: macos-14
-            target: aarch64
+            target: aarch64-apple-darwin
+          - os: macos-14
+            target: x86_64-apple-darwin
+
           - os: windows-latest
             target: x86_64
 
@@ -31,10 +43,24 @@ jobs:
         with:
           python-version: '3.11'
 
+      # maturin-action manages its own Rust toolchain for the macOS legs;
+      # the Linux/Windows "native" path below calls `python -m build`
+      # directly and needs rustc on PATH itself.
       - name: Set up Rust
+        if: runner.os != 'macOS'
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build wheels
+      - name: Build wheels (macOS, via maturin-action for cross-compilation)
+        if: runner.os == 'macOS'
+        uses: PyO3/maturin-action@v1
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+        with:
+          target: ${{ matrix.target }}
+          args: --release --out dist
+
+      - name: Build wheels (Linux/Windows, native)
+        if: runner.os != 'macOS'
         env:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
         run: |
@@ -47,6 +73,10 @@ jobs:
           pip install pytest click pydantic gitpython rich requests
 
       - name: Test wheels
+        # Skip on the cross-compiled Intel-from-ARM leg -- the wheel is
+        # built for a different CPU architecture than this runner, so it
+        # cannot actually be installed/imported here.
+        if: matrix.target != 'x86_64-apple-darwin'
         run: |
           pip install dist/*.whl
           pytest tests/ -v || true
@@ -54,7 +84,7 @@ jobs:
       - name: Upload wheels
         uses: actions/upload-artifact@v4
         with:
-          name: wheels-${{ matrix.os }}
+          name: wheels-${{ matrix.os }}-${{ matrix.target }}
           path: dist/
 
   publish:

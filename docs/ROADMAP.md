@@ -267,6 +267,8 @@ pydependencycheck plugins list
 ### Planned for v1.0+
 - Distributed scanning
 - ML-based dead code detection
+- Automated PR remediation patches (external critique, verified real gap) — today the tool only reports/scores; "GitHub Actions integration (PR comments)" is listed as Phase 5, not-started, and even that's comments, not fix commits/PRs. This is the differentiator vs. dependabot/trivy/safety worth prioritizing.
+- Default to fully offline: OTEL telemetry is already opt-in/local-only (`telemetry.py`, disabled by default, no remote exporter) so that critique item was already false, but OSV/PyPI vulnerability lookups (`crates/pydep-security/src/osv.rs`) hit live network APIs unless `--offline` is passed explicitly — consider flipping the default so "local-first" is true out of the box, not just via a flag.
 - Supply chain attestation (SLSA)
 - Private package registry support
 

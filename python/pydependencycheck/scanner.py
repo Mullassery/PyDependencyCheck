@@ -1,8 +1,9 @@
 """Dependency Scanner: Orchestrates parsing, analysis, and reporting"""
 
 import logging
+import re
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +15,30 @@ try:
 except ImportError:
     HAS_RUST_BACKEND = False
     logger.warning("Rust backend not available, using pure Python (slower)")
+
+
+def exact_pin_version(version_spec: Optional[str]) -> Optional[str]:
+    """Extract a concrete version from a dependency's stored `version`
+    field, but only when it unambiguously names one version.
+
+    `dep["version"]` stores the *full* PEP 508 specifier as parsed
+    (`"==2.25.0"`, `">=2.0.0,<3.0.0"`, `"~=8.1"`) rather than a bare
+    version -- fine for display/SBOM purposes, but wrong to feed directly
+    into a version-sensitive API like OSV's, which needs a real semver
+    string (`"==2.25.0"` fails to parse as semver and silently matches
+    nothing). Only a bare `==` pin resolves to one concrete version; any
+    other operator or a comma-separated range is left out rather than
+    guessed at.
+    """
+    if not version_spec:
+        return None
+    spec = version_spec.strip()
+    if spec.startswith("==") and "," not in spec:
+        return spec[2:].strip() or None
+    # Already a bare version (no leading operator) -- some callers pass this form.
+    if re.match(r"^\d", spec):
+        return spec
+    return None
 
 
 class ScanResult:
@@ -400,15 +425,22 @@ class DependencyScanner:
     def check_vulnerabilities(self) -> List[Dict[str, Any]]:
         """Check parsed dependencies against the OSV.dev vulnerability database.
 
-        Only pinned dependencies (those with a resolved version) can be
-        checked meaningfully, since OSV's SEMVER range matching needs a
-        concrete version to test against.
+        Only exactly-pinned dependencies (`==X.Y.Z`) can be checked
+        meaningfully, since OSV's SEMVER range matching needs one concrete
+        version to test against -- a range/compatible-release specifier
+        (`>=2.0,<3.0`, `~=8.1`) doesn't resolve to a single version without
+        actually resolving the dependency, so those are skipped rather than
+        guessed at.
         """
         if not HAS_RUST_BACKEND:
             logger.warning("Rust backend not available, skipping vulnerability scan")
             return []
 
-        pinned = [(dep["name"], dep["version"]) for dep in self.parsed_deps if dep.get("version")]
+        pinned = [
+            (dep["name"], version)
+            for dep in self.parsed_deps
+            if (version := exact_pin_version(dep.get("version"))) is not None
+        ]
         if not pinned:
             return []
 
@@ -431,8 +463,3 @@ class DependencyScanner:
             }
             for v in vulns
         ]
-
-    def compute_health_score(self) -> int:
-        """Compute overall health score (0-100)"""
-        # TODO: Aggregate multiple metrics (Phase 3)
-        return 50

@@ -542,6 +542,94 @@ def gate(path: str, min_health: int, max_dead_deps: int, offline: bool):
         sys.exit(0)
 
 
+@cli.command()
+@click.option("--path", "-p", type=click.Path(exists=True), default=".", help="Project path")
+@click.option(
+    "--apply", "apply_", is_flag=True, help="Write the fixed versions to disk (default: dry-run, prints diffs only)"
+)
+@click.option(
+    "--pr",
+    is_flag=True,
+    help="Create a real git branch + commit for the fix, push it, and open a GitHub PR via the "
+    "`gh` CLI if it's installed and authenticated (implies --apply)",
+)
+@click.option("--branch", default=None, help="Branch name to use with --pr (default: auto-generated)")
+@click.option("--base-branch", default=None, help="PR base branch with --pr (default: current branch)")
+@click.option("--remote", default="origin", help="Git remote to push to with --pr")
+def remediate(path: str, apply_: bool, pr: bool, branch: Optional[str], base_branch: Optional[str], remote: str):
+    """Generate real patches that bump vulnerable dependencies to their fixed
+    version (OSV.dev `fix_version`), and optionally apply them, or create a
+    branch/commit/PR for them.
+
+    Without --apply/--pr this only prints the unified diff for each affected
+    file and makes no changes -- safe to run against any project.
+    """
+    from .remediate import RemediationError, RemediationRunner, build_remediation_plan
+
+    with console.status("[bold]Scanning and checking vulnerabilities...[/bold]"):
+        scanner = DependencyScanner(path)
+        result = scanner.scan()
+        vulns = scanner.check_vulnerabilities()
+        plan = build_remediation_plan(path, result.dependencies, vulns)
+
+    if not plan.has_fixes:
+        console.print("[green]✓ No fixable vulnerabilities found[/green] (nothing with a known fix_version)")
+        return
+
+    console.print(f"\n[bold]{len(plan.fixes)} fixable vulnerable package(s):[/bold]")
+    for fix in plan.fixes:
+        ids = ", ".join(fix.vulnerability_ids)
+        console.print(f"  {fix.name}: {fix.current_version} -> {fix.fix_version}  [{ids}]")
+
+    if not plan.patches:
+        console.print(
+            "\n[yellow]⚠ No dependency file could be patched automatically[/yellow] "
+            "(only requirements.txt/constraints.txt/pyproject.toml `==` pins are supported)"
+        )
+        return
+
+    for file_path in plan.patches:
+        console.print(f"\n[bold]--- {file_path} ---[/bold]")
+        console.print(plan.diff(file_path))
+
+    if not (apply_ or pr):
+        console.print("\n[dim]Dry run: no files changed. Re-run with --apply to write these changes.[/dim]")
+        return
+
+    if pr:
+        try:
+            runner = RemediationRunner(path)
+            resolved_base = base_branch or runner.repo.active_branch.name
+            branch_name = runner.create_branch_and_commit(plan, branch_name=branch)
+            console.print(f"\n[green]✓[/green] Created branch '{branch_name}' with the fix committed")
+
+            runner.push_branch(branch_name, remote_name=remote)
+            console.print(f"[green]✓[/green] Pushed '{branch_name}' to '{remote}'")
+
+            title = "fix: bump vulnerable dependencies to their patched versions"
+            body = "\n".join(
+                f"- `{fix.name}`: `{fix.current_version}` -> `{fix.fix_version}` "
+                f"({', '.join(fix.vulnerability_ids)})"
+                for fix in plan.fixes
+            )
+            pr_url = runner.create_pull_request(branch_name, resolved_base, title, body)
+            if pr_url:
+                console.print(f"[green]✓[/green] Opened PR: {pr_url}")
+            else:
+                console.print(
+                    "[yellow]⚠[/yellow] `gh` CLI not available/authenticated -- branch was pushed, "
+                    f"open a PR from '{branch_name}' into '{resolved_base}' manually"
+                )
+        except RemediationError as e:
+            console.print(f"\n[red]✗ Remediation failed:[/red] {e}")
+            sys.exit(1)
+    else:
+        from .remediate import apply_plan
+
+        written = apply_plan(path, plan)
+        console.print(f"\n[green]✓[/green] Applied fixes to {len(written)} file(s): {', '.join(written)}")
+
+
 def _format_table_report(result: ScanResult) -> str:
     """Format scan result as a table"""
     lines = [

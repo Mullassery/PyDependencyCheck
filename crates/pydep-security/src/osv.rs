@@ -196,7 +196,7 @@ impl OsvClient {
             }
             if let Some(ranges) = &affected.ranges {
                 for range in ranges {
-                    if range.r#type != "SEMVER" && range.r#type != "ECOSYSTEM" {
+                    if !Self::is_ecosystem_range(range) {
                         continue;
                     }
                     if Self::version_in_range(&target, &range.events) {
@@ -206,6 +206,15 @@ impl OsvClient {
             }
         }
         false
+    }
+
+    /// An OSV range's `type` is "SEMVER"/"ECOSYSTEM" (events carry real
+    /// package versions) or "GIT" (events carry commit hashes). Only the
+    /// former is meaningful for a PyPI version comparison or as a
+    /// `fix_version` -- a GIT range's `fixed` commit hash isn't installable
+    /// via `pip install package==<version>`.
+    fn is_ecosystem_range(range: &OsvRange) -> bool {
+        range.r#type == "SEMVER" || range.r#type == "ECOSYSTEM"
     }
 
     /// SEMVER ranges in OSV are a sorted sequence of introduced/fixed/last_affected
@@ -283,13 +292,19 @@ impl OsvClient {
                 .iter()
                 .flat_map(|a| a.versions.clone().unwrap_or_default())
                 .collect(),
+            // Only ECOSYSTEM/SEMVER ranges carry a real PyPI version in
+            // their `fixed` event -- a GIT range's `fixed` is a commit
+            // hash, not something that belongs in a version field (or gets
+            // fed into a `pip install package==<this>`). Same filter
+            // `version_affected` below already applies when matching
+            // against a queried version; this just applies it here too.
             fix_available: osv.affected.iter().any(|a| {
                 a.ranges
                     .as_ref()
                     .map(|ranges| {
-                        ranges
-                            .iter()
-                            .any(|r| r.events.iter().any(|e| e.fixed.is_some()))
+                        ranges.iter().any(|r| {
+                            Self::is_ecosystem_range(r) && r.events.iter().any(|e| e.fixed.is_some())
+                        })
                     })
                     .unwrap_or(false)
             }),
@@ -300,6 +315,7 @@ impl OsvClient {
                 .and_then(|ranges| {
                     ranges
                         .iter()
+                        .filter(|r| Self::is_ecosystem_range(r))
                         .find_map(|r| r.events.iter().rev().find_map(|e| e.fixed.clone()))
                 }),
         }
@@ -421,6 +437,53 @@ mod tests {
             database_specific: Some(serde_json::json!({"severity": "HIGH"})),
         };
         assert_eq!(OsvClient::derive_severity(&vuln), Severity::High);
+    }
+
+    /// Regression test for a real observed bug: PYSEC-2023-74 (a `requests`
+    /// advisory) has a GIT-type range (fixed = commit hash) listed before
+    /// its ECOSYSTEM range (fixed = real PyPI version) in `affected[0]`.
+    /// `osv_to_vuln` used to take the first range with any `fixed` event
+    /// regardless of type, so `fix_version` came back as a 40-char commit
+    /// hash instead of "2.31.0" -- which is not a valid PyPI version and
+    /// broke any caller (e.g. remediation) that tried to use it as one.
+    #[test]
+    fn fix_version_ignores_git_range_and_uses_ecosystem_range() {
+        let vuln = OsvVulnerability {
+            id: "PYSEC-2023-74".into(),
+            summary: None,
+            details: None,
+            affected: vec![OsvAffected {
+                package: Some(OsvPackage {
+                    ecosystem: "PyPI".into(),
+                    name: "requests".into(),
+                }),
+                ranges: Some(vec![
+                    OsvRange {
+                        r#type: "GIT".into(),
+                        events: range(vec![
+                            (Some("0"), None),
+                            (None, Some("74ea7cf7a6a27a4eeb2ae24e162bcc942a6706d5")),
+                        ]),
+                    },
+                    OsvRange {
+                        r#type: "ECOSYSTEM".into(),
+                        events: range(vec![(Some("0"), None), (None, Some("2.31.0"))]),
+                    },
+                ]),
+                versions: None,
+            }],
+            references: vec![],
+            published: None,
+            modified: None,
+            severity: vec![],
+            database_specific: None,
+        };
+
+        let client = OsvClient::new();
+        let result = client.osv_to_vuln(&vuln, "requests");
+
+        assert_eq!(result.fix_version.as_deref(), Some("2.31.0"));
+        assert!(result.fix_available);
     }
 
     #[test]

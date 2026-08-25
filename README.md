@@ -69,6 +69,7 @@ pydependencycheck gate --min-health 50
 | `licenses` | License classification + compatibility check per dependency |
 | `export` | SBOM export (CycloneDX or SPDX), optionally signed |
 | `gate` | CI gate: real exit code based on health/vulnerability/dead-dep thresholds |
+| `remediate` | Patch vulnerable dependencies to their OSV `fix_version`, optionally as a real git branch/commit + GitHub PR |
 | `snapshot` | Save or inspect a dependency snapshot |
 | `history` | Timeline of saved snapshots |
 | `drift` | Diff the current scan against a saved baseline |
@@ -98,6 +99,43 @@ Dependency Health Score: 87/100 (Excellent)
 ```
 
 Vulnerabilities and staleness require live network calls (OSV.dev and PyPI's JSON API); pass `--offline` to skip them and get a deterministic score from local data only (dead-dependency detection and graph complexity).
+
+### Automated remediation
+
+`remediate` turns an OSV.dev vulnerability finding into an actual patch --
+not just a report:
+
+```bash
+# Dry run: prints a unified diff for every affected file, changes nothing
+pydependencycheck remediate
+
+# Write the fixed versions to requirements.txt/pyproject.toml for real
+pydependencycheck remediate --apply
+
+# Create a real git branch + commit for the fix, push it, and open a GitHub
+# PR via the `gh` CLI (if installed and authenticated)
+pydependencycheck remediate --pr
+```
+
+```
+2 fixable vulnerable package(s):
+  requests: 2.25.0 -> 2.33.0  [GHSA-9hjg-9r4m-mvj7, PYSEC-2023-74, ...]
+  flask: 2.0.0 -> 2.3.2  [GHSA-m2qf-hxjv-5gpq]
+
+--- requirements.txt ---
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -1,2 +1,2 @@
+-requests==2.25.0
+-flask==2.0.0
++requests==2.33.0
++flask==2.3.2
+```
+
+Only exact `==` pins in `requirements.txt`/`constraints.txt`/`pyproject.toml`
+are patched (a range like `>=2.0,<3.0` doesn't name one concrete version to
+bump). With `--pr` but no `gh` CLI available, the branch is still created
+and pushed for real -- open the PR manually.
 
 ### SBOM export and signing
 
@@ -174,8 +212,9 @@ When using PyDependencyCheck, include this attribution:
 
 ## Known issues
 
-- `setup.py`/`setup.cfg`-only projects (no `requirements.txt` or `pyproject.toml`) are not parsed yet — AST parsing of `setup.py` and INI parsing of `setup.cfg` are unimplemented (`crates/pydep-parser/src/setup.rs`, `python/pydependencycheck/scanner.py`).
+- `setup.py`/`setup.cfg`-only projects (no `requirements.txt` or `pyproject.toml`) are not parsed yet — AST parsing of `setup.py` and INI parsing of `setup.cfg` are unimplemented (`crates/pydep-parser/src/setup.rs`, `python/pydependencycheck/scanner.py`), and are consequently also not covered by `remediate`.
 - The health-score "Quality" factor is a single metric today; aggregating multiple quality signals is tracked as future work (`python/pydependencycheck/scanner.py`).
+- **Fixed in this pass:** `check_vulnerabilities()` was passing the full PEP 508 specifier (e.g. `"==2.25.0"`) to OSV.dev instead of the bare version -- `Version::parse("==2.25.0")` fails as invalid semver, so OSV's range matching silently fell back to exact-string matching against nothing, meaning `health`/`gate` reported **zero vulnerabilities for essentially every exactly-pinned dependency**. Also fixed: `fix_version` could come back as a raw git commit hash instead of a PyPI version when an advisory's `affected[].ranges` listed a GIT-type range before its ECOSYSTEM range (both in `crates/pydep-security/src/osv.rs`; see `fix_version_ignores_git_range_and_uses_ecosystem_range` for the regression test).
 - No open GitHub issues at the time of this writing.
 
 ## Support

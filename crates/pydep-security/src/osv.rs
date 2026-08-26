@@ -303,7 +303,8 @@ impl OsvClient {
                     .as_ref()
                     .map(|ranges| {
                         ranges.iter().any(|r| {
-                            Self::is_ecosystem_range(r) && r.events.iter().any(|e| e.fixed.is_some())
+                            Self::is_ecosystem_range(r)
+                                && r.events.iter().any(|e| e.fixed.is_some())
                         })
                     })
                     .unwrap_or(false)

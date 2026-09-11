@@ -4,7 +4,7 @@ Dependency intelligence and supply-chain security for Python projects. A Rust co
 
 [![PyPI](https://img.shields.io/pypi/v/pydependencycheck)](https://pypi.org/project/pydependencycheck)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
-[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-blue.svg)](./LICENSE)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 [![CI](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml)
 
 ## What it does
@@ -205,7 +205,7 @@ Python 3.8+ on Linux (x86_64), macOS (Intel/ARM), or Windows (x86_64).
 
 ## License
 
-Proprietary License - free to use with explicit attribution. See [LICENSE](LICENSE) for details.
+Apache License 2.0. See [LICENSE](LICENSE) for details.
 
 When using PyDependencyCheck, include this attribution:
 > Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)

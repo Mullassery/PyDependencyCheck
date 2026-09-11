@@ -2,7 +2,7 @@
 results, patching real dependency files, and creating a real git
 branch/commit/PR for the fix.
 
-`docs/ROADMAP.md`'s Known Limitations called this out as a verified real
+`docs/archive/ROADMAP_PREV1.0_STALE.md`'s Known Limitations called this out as a verified real
 gap ("Automated PR remediation patches") -- the tool only ever reported
 findings, with no path from "OSV says there's a fix" to an actual file
 change or PR. These tests exercise the real logic end-to-end: real file

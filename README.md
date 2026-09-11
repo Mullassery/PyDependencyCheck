@@ -1,22 +1,41 @@
 # PyDependencyCheck
 
-Dependency intelligence and supply-chain security for Python projects. A Rust core (dependency parsing, graph algorithms, OSV vulnerability scanning) wrapped in a Python CLI: scan dependencies, see who introduced them and why, find unused packages, check license compliance, generate signed SBOMs, and gate CI builds on a real health score.
+## Problem
+
+Most dependency tooling tells you *what* you depend on. It rarely tells you *why* a
+package is there, whether it's actually still used, whether it's vulnerable right now,
+or whether your CI should block a merge over it — and generating a signed SBOM or a
+license-compliance report usually means stitching together several separate tools.
+
+## Solution
+
+Dependency intelligence and supply-chain security for Python projects. A Rust core
+(dependency parsing, graph algorithms, OSV vulnerability scanning) wrapped in a Python
+CLI: scan dependencies, see who introduced them and why, find unused packages, check
+license compliance, generate signed SBOMs, and gate CI builds on a real health score.
 
 [![PyPI](https://img.shields.io/pypi/v/pydependencycheck)](https://pypi.org/project/pydependencycheck)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue)](https://www.python.org)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 [![CI](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml)
 
-## What it does
+## Use cases
 
-- **Scan**: auto-detect and parse `requirements.txt`, `pyproject.toml` (PEP 621 and Poetry), and `constraints.txt`, handling every PEP 508 version operator and extras.
-- **Why / trace**: git-blame-based provenance (who added a dependency, in which commit) and full chronological history across the project's git log.
-- **Health**: a real, computed 0-100 score combining live OSV.dev vulnerability data, PyPI release staleness, AST-detected dead dependencies, and dependency-graph complexity.
-- **SBOM export**: CycloneDX 1.4 and SPDX 2.3 JSON, with optional RSA-SHA256 signing and verification.
-- **License compliance**: fetches real PyPI license metadata, classifies permissive/copyleft/restricted, and checks compatibility against your project's own license.
-- **CI gating**: `gate` computes the same health score and exits non-zero on failure, with GitHub Actions `::error`/`::warning`/`::notice` annotations when run inside a GitHub Actions job.
-- **Drift & history**: SQLite-backed snapshots so you can diff what changed since a baseline.
-- **OpenTelemetry**: optional tracing/metrics via `--otel`, defaulting to a console exporter (no collector required) or OTLP/Jaeger/Prometheus if configured.
+- **Gating a CI pipeline on dependency health** — `pydependencycheck gate --min-health 50`
+  exits non-zero and prints real GitHub Actions annotations, so a PR fails the same way
+  a test failure would. See [CI gating](#ci-gating-with-github-actions) below.
+- **Investigating why a package is in your tree** — `why requests` / `trace requests`
+  give git-blame provenance and full history, useful when auditing an unfamiliar
+  project or figuring out who to ask about a dependency.
+- **Auto-patching known-vulnerable pins** — `remediate --apply` (or `--pr` to open a
+  real GitHub PR) bumps exactly-pinned vulnerable packages to their OSV `fix_version`.
+  Only handles exact `==` pins today — a range like `>=2.0,<3.0` isn't touched.
+- **Producing a signed SBOM for compliance** — `export --format cyclonedx --sign` for
+  CycloneDX/SPDX output with an RSA-SHA256 signature.
+- **Not yet a good fit for:** projects that only ship `setup.py`/`setup.cfg` with no
+  `requirements.txt`/`pyproject.toml` (unsupported — see
+  [What's not working](#whats-not-working--open-issues)); teams relying on the CI
+  workflow's automated PyPI publish step (currently broken — see the same section).
 
 ## Installation
 
@@ -98,7 +117,7 @@ Dependency Health Score: 87/100 (Excellent)
 └─────────────────┴─────────┴──────────────────────┘
 ```
 
-Vulnerabilities and staleness require live network calls (OSV.dev and PyPI's JSON API); pass `--offline` to skip them and get a deterministic score from local data only (dead-dependency detection and graph complexity).
+Vulnerabilities and staleness require live network calls (OSV.dev and PyPI's JSON API); pass `--offline` to skip them and get a deterministic score from local data only (dead-dependency detection and graph complexity). The "Quality" factor is currently a single metric, not yet an aggregate of multiple signals — see [What's not working](#whats-not-working--open-issues).
 
 ### Automated remediation
 
@@ -183,7 +202,7 @@ jobs:
 pydependencycheck health --otel
 ```
 
-Defaults to a `console` exporter backed by the real OpenTelemetry SDK (`ConsoleSpanExporter`/`ConsoleMetricExporter`) -- genuine spans and metrics printed to stdout, no collector required. Pass `--otel-exporter otlp|jaeger|prometheus` to ship to real infrastructure if you have it configured; if the corresponding exporter package isn't installed, it falls back to `console` rather than silently doing nothing.
+Defaults to a `console` exporter backed by the real OpenTelemetry SDK (`ConsoleSpanExporter`/`ConsoleMetricExporter`) -- genuine spans and metrics printed to stdout, no collector required, and verified by tests. Pass `--otel-exporter otlp|jaeger|prometheus` to ship to real infrastructure if you have it configured; if the corresponding exporter package isn't installed, it falls back to `console` rather than silently doing nothing. These three backends are real code paths but aren't verified end-to-end against a live collector in this project's own test suite — see [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md).
 
 ## Architecture
 
@@ -197,7 +216,48 @@ Rust workspace (`crates/`) does the heavy lifting, exposed to Python via PyO3:
 
 The Python package (`python/pydependencycheck/`) is the CLI, plus SBOM generation, license analysis, git integration, SQLite-backed snapshot storage, and OpenTelemetry instrumentation.
 
-**Testing**: 45 Rust unit tests (`cargo test --workspace`) across all four crates, plus 126 Python tests (`pytest tests/`) covering the CLI end-to-end, the XSS fix, SBOM signing/verification, license classification, health scoring, and the SQLite storage layer.
+## What's working now (verified)
+
+**46 Rust tests** (`cargo test --workspace`) + **153 Python tests** (`pytest tests/`),
+all passing as of the 2026-09-11 CI run on `main` — covering the CLI end-to-end, SBOM
+signing/verification, license classification, health scoring, `remediate`'s full
+plan/apply/branch/commit/push/PR path (against a real `gh` binary and a real local git
+remote, not mocks), and the SQLite storage layer. Wheels build successfully for
+Linux, macOS (Intel/ARM), and Windows. See [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) for
+the full built-and-verified / built-but-unverified / not-built breakdown.
+
+## What's not working / open issues
+
+- **The automated PyPI publish CI job has never succeeded.** Both real release-tag
+  pushes to date (`v1.0.0`, `v1.4.0`) failed at the "Publish to PyPI" step: no
+  `PYPI_API_TOKEN` secret is configured, so the action falls back to OIDC trusted
+  publishing, which then fails because the workflow has no `permissions: id-token:
+  write` block. **The current PyPI release (v1.4.0, matches this repo's version with no
+  drift) was published manually via `twine`, not through this CI job.** Not yet fixed —
+  needs either a `PYPI_API_TOKEN` secret or a properly configured Trusted Publisher on
+  PyPI's side. See [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) for the full failure log
+  detail.
+- **`setup.py`/`setup.cfg`-only projects (no `requirements.txt` or `pyproject.toml`)
+  are not parsed** — AST parsing of `setup.py` and INI parsing of `setup.cfg` are
+  literal `TODO` stubs (`crates/pydep-parser/src/setup.rs`,
+  `python/pydependencycheck/scanner.py`), and are consequently also not covered by
+  `remediate`.
+- **The health-score "Quality" factor is a single metric today** — aggregating
+  multiple quality signals is tracked as future work
+  (`python/pydependencycheck/scanner.py`).
+- **OTLP/Jaeger/Prometheus OTEL exporters aren't verified end-to-end** against a real
+  collector in this project's own tests — only the fallback-to-console behavior is
+  tested. See [OpenTelemetry](#opentelemetry) above.
+- **Fixed this release, disclosed for anyone on an older version:**
+  `check_vulnerabilities()` was passing the full PEP 508 specifier (e.g. `"==2.25.0"`)
+  to OSV.dev instead of the bare version -- OSV's range matching silently fell back to
+  exact-string matching against nothing, meaning `health`/`gate` reported **zero
+  vulnerabilities for essentially every exactly-pinned dependency** on any version
+  before this fix. Also fixed: `fix_version` could come back as a raw git commit hash
+  instead of a PyPI version when an advisory's `affected[].ranges` listed a GIT-type
+  range before its ECOSYSTEM range (both in `crates/pydep-security/src/osv.rs`; see
+  `fix_version_ignores_git_range_and_uses_ecosystem_range` for the regression test).
+- No open GitHub issues at the time of this writing.
 
 ## Requirements
 
@@ -209,13 +269,6 @@ Apache License 2.0. See [LICENSE](LICENSE) for details.
 
 When using PyDependencyCheck, include this attribution:
 > Powered by PyDependencyCheck (https://github.com/Mullassery/PyDependencyCheck)
-
-## Known issues
-
-- `setup.py`/`setup.cfg`-only projects (no `requirements.txt` or `pyproject.toml`) are not parsed yet — AST parsing of `setup.py` and INI parsing of `setup.cfg` are unimplemented (`crates/pydep-parser/src/setup.rs`, `python/pydependencycheck/scanner.py`), and are consequently also not covered by `remediate`.
-- The health-score "Quality" factor is a single metric today; aggregating multiple quality signals is tracked as future work (`python/pydependencycheck/scanner.py`).
-- **Fixed in this pass:** `check_vulnerabilities()` was passing the full PEP 508 specifier (e.g. `"==2.25.0"`) to OSV.dev instead of the bare version -- `Version::parse("==2.25.0")` fails as invalid semver, so OSV's range matching silently fell back to exact-string matching against nothing, meaning `health`/`gate` reported **zero vulnerabilities for essentially every exactly-pinned dependency**. Also fixed: `fix_version` could come back as a raw git commit hash instead of a PyPI version when an advisory's `affected[].ranges` listed a GIT-type range before its ECOSYSTEM range (both in `crates/pydep-security/src/osv.rs`; see `fix_version_ignores_git_range_and_uses_ecosystem_range` for the regression test).
-- No open GitHub issues at the time of this writing.
 
 ## Support
 

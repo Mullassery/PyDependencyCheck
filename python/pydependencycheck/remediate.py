@@ -3,7 +3,7 @@ dependency-file patches, and optionally a real git branch + commit (and a
 GitHub PR via the `gh` CLI, if it's installed and authenticated).
 
 This is the "Automated PR remediation patches" gap called out in
-docs/ROADMAP.md's Known Limitations -- previously the tool only reported
+docs/archive/ROADMAP_PREV1.0_STALE.md's Known Limitations -- previously the tool only reported
 findings; there was no path from "OSV says package X has a fix in version Y"
 to an actual file change, let alone a branch/PR. `compute_fixes` maps
 `DependencyScanner.check_vulnerabilities()` output onto pinned dependencies,

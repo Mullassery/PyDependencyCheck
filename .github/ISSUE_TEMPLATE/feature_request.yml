@@ -1,0 +1,41 @@
+name: Feature Request
+description: Suggest an idea or enhancement for PyDependencyCheck
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is a single-maintainer, spare-time project (see `SECURITY.md`).
+        Feature requests are welcome, but there's no roadmap team triaging
+        these on an SLA — realistic, scoped requests with a clear use case
+        are much more likely to get picked up than open-ended ones.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: The underlying need, not just the feature — helps evaluate alternatives.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What you'd like PyDependencyCheck to do (a new command/flag, changed output, etc.)
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other tools or workarounds you've tried, if any.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues/discussions and this hasn't been requested already
+          required: true

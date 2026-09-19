@@ -1,0 +1,63 @@
+name: Bug Report
+description: Report something that's broken in PyDependencyCheck
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Before filing, please
+        check [ROADMAP_HONEST.md](https://github.com/Mullassery/PyDependencyCheck/blob/main/ROADMAP_HONEST.md)
+        — some known gaps (e.g. `setup.py`/`setup.cfg`-only projects not being
+        parsed, the manual PyPI publish process) are already documented there
+        rather than tracked as bugs.
+
+  - type: input
+    id: version
+    attributes:
+      label: PyDependencyCheck version
+      description: Output of `pydependencycheck --version` (or `pip show pydependencycheck`)
+      placeholder: "1.4.0"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version and OS
+      placeholder: "Python 3.11, Ubuntu 22.04"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you run, what did you expect, what actually happened?
+      placeholder: |
+        Command: pydependencycheck health
+        Expected: ...
+        Actual: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: >
+        A `requirements.txt`/`pyproject.toml` snippet (or a link to a public
+        repo) that reproduces the issue, plus the exact command and full
+        output/traceback.
+      render: shell
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and this hasn't been reported already
+          required: true
+        - label: I checked ROADMAP_HONEST.md and this isn't a documented, known gap
+          required: true

@@ -21,19 +21,19 @@ jobs:
           targets: x86_64-unknown-linux-gnu
 
       - name: Cache cargo registry
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo index
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cargo/git
           key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Cache cargo build
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: target
           key: ${{ runner.os }}-cargo-build-target-${{ hashFiles('**/Cargo.lock') }}
@@ -58,7 +58,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -87,12 +87,19 @@ jobs:
         run: maturin develop --release
 
       - name: Run tests
-        run: pytest tests/ -v --cov=pydependencycheck
+        run: pytest tests/ -v --cov=pydependencycheck --cov-report=xml
 
+      # codecov-action v4 requires a CODECOV_TOKEN secret even for public repos.
+      # Whether that secret exists on this repo could not be verified from this
+      # environment (no network access to the GitHub API). If it's absent, this
+      # step fails every run; continue-on-error keeps that from blocking the
+      # rest of CI. See ROADMAP_HONEST.md.
       - name: Upload coverage
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
+        continue-on-error: true
         with:
           files: ./coverage.xml
+          fail_ci_if_error: false
 
   lint:
     name: Linting
@@ -102,7 +109,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 

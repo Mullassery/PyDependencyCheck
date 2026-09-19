@@ -8,37 +8,43 @@ pip install pydependencycheck
 
 ## Requirements
 
-- Python 3.10+
-- macOS 10.13+, Ubuntu 20.04+, Windows 10+
+- Python 3.8+
+- macOS, Linux (x86_64), or Windows (x86_64) with a prebuilt wheel available;
+  see [What's not working / open issues](../README.md#whats-not-working--open-issues)
+  in the README for current CI/release gaps.
 
 ## Installation
 
 ### Standard Install (Recommended)
-Works for most users with prebuilt wheels:
+Works for most users with prebuilt wheels (Linux x86_64, macOS Intel/Apple Silicon, Windows x86_64):
 ```bash
 pip install pydependencycheck
 ```
 
-### From Source (If Needed)
-For ARM or custom builds:
+### From Source (If No Prebuilt Wheel Matches Your Platform)
+Requires a Rust toolchain and [maturin](https://github.com/PyO3/maturin):
 ```bash
 # Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
-# Then install
-pip install pydependencycheck
+# Clone and build
+git clone https://github.com/Mullassery/PyDependencyCheck
+cd PyDependencyCheck
+pip install maturin
+maturin build --release
+pip install target/wheels/pydependencycheck-*.whl
 ```
 
 ## Troubleshooting
 
 ### "No wheels available for your platform"
+Build from source using the steps above, then:
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 pip install --force-reinstall pydependencycheck
 ```
 
 ### Python version issues
-Ensure Python 3.10+:
+This project requires Python 3.8+:
 ```bash
 python --version
 ```
@@ -51,8 +57,6 @@ sudo apt-get install python3-dev build-essential
 ## Next Steps
 
 After installation:
-1. See [README.md](../README.md) for quick start
-2. Check [examples/](../examples/) for usage examples
-3. Read [docs/](../docs/) for full documentation
-
-For more help, see [full installation guide](INSTALL.md).
+1. See the [README](../README.md) for the quick start and full command reference.
+2. See [ROADMAP_HONEST.md](../ROADMAP_HONEST.md) for what's verified vs. not built.
+3. See [CONTRIBUTING.md](../CONTRIBUTING.md) if you want to build from source or contribute.

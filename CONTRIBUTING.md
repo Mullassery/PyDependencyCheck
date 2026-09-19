@@ -137,4 +137,4 @@ Describe what you want to build and why.
 
 ---
 
-**Contributor Agreement:** By submitting code, you agree it will be licensed under the Proprietary License. See LICENSE for details.
+**Contributor Agreement:** By submitting code, you agree it will be licensed under the Apache License 2.0. See [LICENSE](LICENSE) for details.

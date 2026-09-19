@@ -218,13 +218,21 @@ The Python package (`python/pydependencycheck/`) is the CLI, plus SBOM generatio
 
 ## What's working now (verified)
 
-**46 Rust tests** (`cargo test --workspace`) + **153 Python tests** (`pytest tests/`),
-all passing as of the 2026-09-11 CI run on `main` — covering the CLI end-to-end, SBOM
-signing/verification, license classification, health scoring, `remediate`'s full
-plan/apply/branch/commit/push/PR path (against a real `gh` binary and a real local git
-remote, not mocks), and the SQLite storage layer. Wheels build successfully for
-Linux, macOS (Intel/ARM), and Windows. See [`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) for
-the full built-and-verified / built-but-unverified / not-built breakdown.
+**46 Rust tests** (`cargo test --workspace`, re-verified 2026-09-20: 15+7+9+15
+passed across the four crates with tests) + **153 Python tests** (`pytest
+tests/`) covering the CLI end-to-end, SBOM signing/verification, license
+classification, health scoring, `remediate`'s full plan/apply/branch/commit/
+push/PR path (against a real `gh` binary and a real local git remote, not
+mocks), and the SQLite storage layer. Re-verified 2026-09-20: **136 pass
+unconditionally; the other 17 are OpenTelemetry-integration tests that
+`pytest.mark.skipif` skips unless `opentelemetry-api`/`opentelemetry-sdk` are
+installed.** `ci.yml`'s `python-tests` job does not install those packages,
+so a real CI run shows "136 passed, 17 skipped," not "153 passed" — install
+`pydependencycheck[otel]` locally to actually exercise those 17. Wheels build
+successfully for Linux, macOS (Intel/ARM), and Windows (re-verified: `maturin
+develop --release` succeeds on macOS arm64). See
+[`ROADMAP_HONEST.md`](ROADMAP_HONEST.md) for the full built-and-verified /
+built-but-unverified / not-built breakdown.
 
 ## What's not working / open issues
 

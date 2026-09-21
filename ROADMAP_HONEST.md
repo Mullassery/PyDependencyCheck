@@ -1,7 +1,7 @@
 # PyDependencyCheck — Honest Status
 
 **Current Version:** v1.4.0 (matches the version live on PyPI — no drift)
-**Last Updated:** 2026-09-20
+**Last Updated:** 2026-09-21
 
 This file exists to say plainly what's built-and-verified, what's built-but-unverified,
 what's not built yet, and what's actively broken in CI/release infrastructure —
@@ -128,22 +128,55 @@ instead of from what the README merely claims.
   history. This has now recurred at least three times (two prior fixes in
   git log plus this one) — the actual gap is that nothing pins a `black`
   version or runs `black` as a local pre-commit hook, so drift keeps
-  re-happening between CI runs and contributor machines. **Worth a
-  dedicated small fix**: pin `black` in `pyproject.toml`'s `dev` extra
-  and/or add a `.pre-commit-config.yaml`.
+  re-happening between CI runs and contributor machines. **Fixed
+  2026-09-21**: pinned `black==25.11.0` (exact) in `pyproject.toml`'s `dev`
+  extra and in `.github/workflows/ci.yml`'s `lint` job, replacing the
+  unbounded `black>=23.0` / unpinned `pip install black ruff mypy`. Verified
+  the drift is real and version-specific: with the ambient `black 26.5.1`
+  on this machine, `black --check python/` failed again on the same two
+  files (`reporters.py`, `storage.py`) as 2026-09-20; reformatting with the
+  pinned `25.11.0` in a clean venv reproduced the exact bytes already
+  committed (zero diff), confirming 25.11.0 — not 26.5.1 — is the version
+  this repo's style is actually pinned to. `26.5.1` was tried first but
+  rejected: it requires Python >=3.10, which would break `pip install
+  -e .[dev]` for contributors on the project's stated `requires-python =
+  ">=3.8"`; `25.11.0` is the newest release that still installs cleanly
+  under 3.8/3.9. A `.pre-commit-config.yaml` is still not added (that's
+  additional process, not just a version pin) — remains open if wanted.
+
+## 🧹 Fixed 2026-09-21 (small, mechanical, verified)
+
+- **`black` version drift, confirmed recurring** (see the "Technical debt"
+  entry below for full detail) — pinned `black==25.11.0` in `pyproject.
+  toml`'s `dev` extra and `.github/workflows/ci.yml`'s `lint` job.
+- `pyproject.toml`'s `[tool.ruff]` table used the top-level `select`/
+  `ignore` keys, which current `ruff` (0.x as installed here) treats as
+  deprecated in favor of `[tool.ruff.lint]` — every `ruff check` invocation
+  printed a `warning: The top-level linter settings are deprecated`
+  message. Moved `select`/`ignore` under a new `[tool.ruff.lint]` table;
+  `ruff check python/` still reports "All checks passed!" with the warning
+  gone.
+- Re-verified `cargo test --workspace` (46 passed), `cargo clippy
+  --workspace -- -D warnings` (clean), `cargo fmt --check` (clean), and
+  `pytest tests/` in a fresh venv with `maturin develop --release`
+  (136 passed, 17 skipped — same otel-gated skip count as 2026-09-20,
+  no regressions) after both fixes above.
 
 ## ⚠️ New CI risk introduced by the above fix (disclosed, not silently papered over)
 
 - `codecov/codecov-action@v4` requires a `CODECOV_TOKEN` secret even for
-  public repositories (v3 did not strictly enforce this). Whether this repo
-  has that secret configured could not be checked from the environment this
-  audit ran in (`gh secret list` timed out — no outbound network access to
-  the GitHub API). If the token is absent, the "Upload coverage" step in
-  `ci.yml` will fail on every run. `continue-on-error: true` and
-  `fail_ci_if_error: false` were added so that failure degrades gracefully
-  instead of turning the whole `python-tests` job red. **Someone with repo
-  access should verify whether `CODECOV_TOKEN` exists and add it if not** —
-  otherwise coverage reporting is silently broken going forward.
+  public repositories (v3 did not strictly enforce this). **Confirmed
+  2026-09-21** (this environment had working `gh` API access this pass,
+  unlike 2026-09-20): `gh api repos/Mullassery/PyDependencyCheck/actions/
+  secrets` returns `{"total_count":0,"secrets":[]}` — no `CODECOV_TOKEN`
+  (and no `PYPI_API_TOKEN`, see the publish-job note above) is configured
+  on this repo at all. So the "Upload coverage" step in `ci.yml` **will**
+  fail on every run, not just "might." `continue-on-error: true` and
+  `fail_ci_if_error: false` are already in place so that failure degrades
+  gracefully instead of turning the whole `python-tests` job red, but
+  coverage reporting to Codecov is confirmed silently broken until someone
+  with repo admin access adds the secret — this is now a known fact, not
+  an open question.
 
 ## 🆕 Added 2026-09-20 (maturity/discoverability, not yet exercised by a real CI run)
 

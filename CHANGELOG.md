@@ -46,6 +46,17 @@ in the current release.
   `wheels.yml`: `actions/cache@v3` → `v4`, `actions/setup-python@v4` → `v5`,
   `codecov/codecov-action@v3` → `v4` (flagged by `actionlint`, which now
   passes clean on both workflow files).
+- Pinned `black==25.11.0` (exact) in `pyproject.toml`'s `dev` extra and in
+  `.github/workflows/ci.yml`'s `lint` job, replacing the unbounded
+  `black>=23.0` / unpinned `pip install black ruff mypy`. This is the
+  concrete fix for the `black --check` drift that had already recurred
+  three times (see `ROADMAP_HONEST.md`); reproduced it again with an
+  unpinned `black 26.5.1` and confirmed `25.11.0` is the version this
+  repo's committed formatting actually matches, and the newest one still
+  installable under the project's stated `requires-python = ">=3.8"`.
+- Moved `pyproject.toml`'s `[tool.ruff]` `select`/`ignore` keys into a new
+  `[tool.ruff.lint]` table — `ruff check` was printing a deprecation
+  warning on every run for the old top-level location.
 
 ### Added
 - `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/dependabot.yml`,
@@ -54,9 +65,11 @@ in the current release.
 
 ### Known issue introduced by this pass (disclosed, not silently hidden)
 - `codecov/codecov-action@v4` requires a `CODECOV_TOKEN` secret even for
-  public repos (v3 did not strictly require one). Whether this repo has that
-  secret configured could not be verified from the environment this change
-  was made in (no GitHub API network access). `continue-on-error: true` and
-  `fail_ci_if_error: false` were added to the upload step so a missing token
-  degrades to a skipped/failed-soft step instead of turning the whole
-  `python-tests` job red. See `ROADMAP_HONEST.md`.
+  public repos (v3 did not strictly require one). **Confirmed 2026-09-21**
+  via `gh api repos/Mullassery/PyDependencyCheck/actions/secrets`
+  (`{"total_count":0,"secrets":[]}`): this repo has no secrets configured
+  at all, so the "Upload coverage" step will fail on every CI run.
+  `continue-on-error: true` and `fail_ci_if_error: false` are already in
+  place so this degrades to a soft failure instead of turning the whole
+  `python-tests` job red, but actually fixing coverage upload requires a
+  maintainer to add the secret. See `ROADMAP_HONEST.md`.

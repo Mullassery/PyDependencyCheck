@@ -115,7 +115,7 @@ jobs:
 
       - name: Install linting tools
         run: |
-          pip install black ruff mypy
+          pip install black==25.11.0 ruff mypy
 
       - name: Run black
         run: black --check python/

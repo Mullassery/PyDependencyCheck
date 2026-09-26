@@ -117,6 +117,35 @@ dependencies = ["requests>=2.0"]
         assert names == {"requests"}
         assert "some-unrelated-nested-dep" not in names
 
+    def test_scan_excludes_nested_independent_project(self, tmp_path):
+        """Regression test found via real-world benchmarking against Flask:
+        a recursive glob for dependency files used to also pick up
+        requirements.txt from a self-contained example app vendored inside
+        the repo (e.g. Flask's own examples/celery/, which ships its own
+        pyproject.toml + requirements.txt), silently merging an unrelated
+        sub-project's dependencies (celery, amqp, billiard, ...) into the
+        parent project's totals. Any directory with its own
+        pyproject.toml/setup.py/setup.cfg is now treated as a separate
+        project boundary and excluded from the parent scan."""
+        (tmp_path / "pyproject.toml").write_text(
+            '[project]\nname = "main-app"\ndependencies = ["flask>=2.0.0"]\n'
+        )
+
+        nested = tmp_path / "examples" / "celery"
+        nested.mkdir(parents=True)
+        (nested / "pyproject.toml").write_text(
+            '[project]\nname = "celery-example"\ndependencies = []\n'
+        )
+        (nested / "requirements.txt").write_text("celery==5.2.7\namqp==5.1.1\n")
+
+        scanner = DependencyScanner(str(tmp_path))
+        result = scanner.scan()
+
+        names = {d["name"] for d in result.dependencies}
+        assert names == {"flask"}
+        assert "celery" not in names
+        assert "amqp" not in names
+
     def test_find_dead_dependencies_no_rust_backend(self, tmp_path, monkeypatch):
         """Without the Rust backend, dead-dependency detection should
         degrade gracefully (empty result) rather than raising."""

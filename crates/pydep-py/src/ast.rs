@@ -39,8 +39,17 @@ fn collect_py_files(dir: &Path, out: &mut Vec<std::path::PathBuf>) -> std::io::R
     Ok(())
 }
 
-/// Scan a project directory for all imported top-level package names
-/// (deduplicated, normalized to their import-time name).
+/// Scan a project directory for all imported top-level package names,
+/// normalized to their import-time name. Returns one entry per import
+/// *occurrence*, not deduplicated -- both callers (`analyze_usage`'s
+/// per-package usage counts, and `find_dead_packages`'s single-use-vs-never-
+/// used confidence heuristic) need real per-package frequency, and silently
+/// deduplicating here made every package look like it was imported exactly
+/// once project-wide regardless of its real usage. That previously made
+/// heavily-used real dependencies (e.g. `click`, `jinja2` in a project like
+/// Flask, each imported in dozens of files) get flagged as "Medium
+/// confidence" possibly-dead single-use dependencies, and made
+/// `analyze_usage`'s counts always come out as 0 or 1.
 #[pyfunction]
 pub fn scan_imports(project_path: &str) -> PyResult<Vec<String>> {
     let mut files = Vec::new();
@@ -56,10 +65,7 @@ pub fn scan_imports(project_path: &str) -> PyResult<Vec<String>> {
         let file_str = file.to_string_lossy();
         if let Ok(imports) = extract_imports_from_source(&content, &file_str) {
             for import in imports {
-                let package = extract_package_name(&import.module);
-                if !packages.contains(&package) {
-                    packages.push(package);
-                }
+                packages.push(extract_package_name(&import.module));
             }
         }
     }

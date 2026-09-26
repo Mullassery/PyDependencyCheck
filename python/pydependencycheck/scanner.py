@@ -119,15 +119,52 @@ class DependencyScanner:
             relative_parts = path.parts
         return any(part in self.IGNORED_DIRS or part.endswith(".egg-info") for part in relative_parts)
 
+    # Files that mark a directory as the root of its own independent Python
+    # project (e.g. a self-contained example app vendored inside a larger
+    # repo, each with its own pyproject.toml + requirements.txt). Real-world
+    # repos are full of these -- Flask's own `examples/celery/` is one. A
+    # recursive `**/requirements.txt` glob on the parent repo happily merges
+    # that nested project's dependencies (amqp, celery, billiard, ...) into
+    # the parent's totals as if they were the parent's own, which corrupts
+    # the dependency count, health score, and SBOM for the actual project
+    # being scanned. Any subdirectory containing one of these markers is
+    # treated as a separate project boundary and excluded from the parent
+    # scan.
+    _PROJECT_ROOT_MARKERS = ("pyproject.toml", "setup.py", "setup.cfg")
+
+    def _find_nested_project_dirs(self) -> set:
+        nested = set()
+        for marker in self._PROJECT_ROOT_MARKERS:
+            for marker_path in self.project_path.glob(f"**/{marker}"):
+                parent = marker_path.parent
+                if parent != self.project_path and not self._is_ignored(marker_path):
+                    nested.add(parent)
+        return nested
+
     def find_dependency_files(self) -> List[Path]:
         """Auto-detect dependency declaration files"""
+        nested_project_dirs = self._find_nested_project_dirs()
+
+        def _in_nested_project(path: Path) -> bool:
+            return any(
+                nested_dir == path.parent or nested_dir in path.parents
+                for nested_dir in nested_project_dirs
+            )
+
         found = []
         for pattern in self.DEPENDENCY_FILES:
             matches = list(self.project_path.glob(f"**/{pattern}"))
-            found.extend(m for m in matches if not self._is_ignored(m))
+            found.extend(
+                m for m in matches if not self._is_ignored(m) and not _in_nested_project(m)
+            )
 
         self.found_files = found
         logger.info(f"Found {len(found)} dependency files: {[f.name for f in found]}")
+        if nested_project_dirs:
+            logger.info(
+                f"Excluded {len(nested_project_dirs)} nested project(s) from scan: "
+                f"{[str(d.relative_to(self.project_path)) for d in nested_project_dirs]}"
+            )
         return found
 
     def parse_dependencies(self) -> List[Dict[str, Any]]:

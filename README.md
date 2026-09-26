@@ -37,6 +37,56 @@ license compliance, generate signed SBOMs, and gate CI builds on a real health s
   [What's not working](#whats-not-working--open-issues)); teams relying on the CI
   workflow's automated PyPI publish step (currently broken — see the same section).
 
+## vs pip-audit
+
+The closest OSS match for the vulnerability-scanning slice of PyDependencyCheck is
+[pip-audit](https://github.com/pypa/pip-audit) (PyPA's own tool). They're not full
+feature equivalents — pip-audit is vulnerability-scanning only; PyDependencyCheck adds
+git-blame provenance, unused-dependency detection, license compliance, signed SBOM
+export, and CI gating on top. Measured 2026-09-22 on this machine (Apple Silicon,
+macOS) against a real, live clone of [pallets/flask](https://github.com/pallets/flask)
+(`d73fa1c`, cloned fresh, not a fixture) — its real 8 direct dependencies from its
+actual `pyproject.toml`, installed into a real venv:
+
+| | PyDependencyCheck (`health`) | pip-audit 2.10.1 |
+|---|---|---|
+| Real dependencies scanned | 8 direct | 23 installed (incl. transitive) |
+| Vulnerabilities found | 0 | 0 |
+| Runtime (median of 3 real runs) | 0.91s | 0.42s |
+| Unused-dependency detection | Yes — flagged 4 of 8: `blinker`, `itsdangerous`, `asgiref` as single-file-use (confirmed by grep) and `python-dotenv` as never statically imported (it's loaded via a conditional `importlib` call in Flask's `cli.py`, a known blind spot for any AST-based scanner, this one included) | Not supported |
+| Git-blame provenance (`why`/`trace`) | Yes | Not supported |
+| License compliance report | Yes | Not supported |
+| Signed SBOM export | Yes (CycloneDX/SPDX, RSA-SHA256) | Not supported |
+| CI gate with real exit code | Yes (`gate --min-health`) | Not supported (exit-code-on-vuln only) |
+
+Both tools agreed on the headline result (0 known vulnerabilities in Flask's current
+deps) — useful as a correctness cross-check. On raw runtime, pip-audit was faster
+here (0.42s vs 0.91s median) despite checking more packages (23 installed vs 8
+exactly-pinned) — PyDependencyCheck's `health` does more work per run (staleness
+checks against PyPI, dead-dependency AST scan, complexity/graph analysis, not just
+vulnerabilities), so this isn't a controlled apples-to-apples speed race. The real
+value of this benchmark was catching two real bugs (see below), not the runtime
+numbers.
+
+**Bugs found and fixed while running this benchmark:** running against a real,
+messy repo (not a synthetic fixture) surfaced two real correctness bugs, both fixed
+in this release:
+1. `scan`/`health` recursively globbed dependency files project-wide and silently
+   merged an unrelated nested example app's dependencies (Flask's own
+   `examples/celery/`, which vendors its own `pyproject.toml` + `requirements.txt`)
+   into the parent project's totals — inflating Flask's real 8 dependencies to a
+   bogus 24 and pulling in celery/amqp/billiard as if they were Flask's own deps.
+   Fixed in `scanner.py`'s `find_dependency_files` (any directory with its own
+   `pyproject.toml`/`setup.py`/`setup.cfg` is now treated as a separate project
+   boundary and excluded).
+2. Unused-dependency detection deduplicated imports project-wide before counting
+   usage frequency, so every dependency looked "imported exactly once" regardless
+   of real usage — flagging all 8 of Flask's real dependencies (including
+   heavily-used ones like `click` and `jinja2`) as possibly-unused. Fixed in
+   `crates/pydep-py/src/ast.rs`'s `scan_imports` (now returns one entry per import
+   occurrence instead of a deduplicated set), which corrected the result down to the
+   4 dependencies above — 3 genuinely single-file-imported, 1 loaded dynamically.
+
 ## Installation
 
 ```bash

@@ -175,11 +175,12 @@ impl OsvClient {
     /// range comparison against `introduced`/`fixed` events, plus exact
     /// version-list matching for non-range advisories.
     fn version_affected(&self, vuln: &OsvVulnerability, version: &str) -> bool {
-        let target = match Version::parse(version) {
-            Ok(v) => v,
-            // If the version string isn't strict semver (e.g. "1.0" or "1.0.0rc1"),
-            // fall back to exact string matching only.
-            Err(_) => {
+        let target = match Self::parse_lenient(version) {
+            Some(v) => v,
+            // If the version string isn't strict semver even after lenient
+            // 2-part padding (e.g. "1.0.0rc1", or a PEP 440 `.postN`/`.devN`
+            // suffix), fall back to exact string matching only.
+            None => {
                 return vuln.affected.iter().any(|a| {
                     a.versions
                         .as_ref()
@@ -507,5 +508,59 @@ mod tests {
         let parsed: OsvQueryResponse = serde_json::from_str(sample).unwrap();
         assert_eq!(parsed.vulns.len(), 1);
         assert_eq!(parsed.vulns[0].id, "GHSA-xxxx-xxxx-xxxx");
+    }
+
+    /// Regression test for a real bug: `version_affected` parsed the
+    /// *target* version with strict `Version::parse` only, while OSV range
+    /// *bounds* already went through `parse_lenient` (which pads a 2-part
+    /// version like "4.2" to "4.2.0" -- the comment on `parse_lenient`
+    /// itself notes "OSV ranges often omit the patch component"). A
+    /// 2-component exact pin is an everyday, valid PEP 440 version --
+    /// `Django==4.2`, `numpy==1.24` -- and strict `Version::parse("4.2")`
+    /// fails, so the whole SEMVER/ECOSYSTEM range-matching path was
+    /// silently skipped for any such pin, falling through to exact-string
+    /// matching against `affected[].versions` only (which range-based
+    /// advisories rarely populate). That means dependencies pinned without
+    /// a patch component never got flagged for their real, range-based
+    /// vulnerabilities. Verified before the fix: `version_affected` for
+    /// "4.2" against a range of `[0, 4.2.7)` returned `false`.
+    #[test]
+    fn two_part_pinned_version_matches_a_range() {
+        let client = OsvClient::new();
+        let vuln = OsvVulnerability {
+            id: "TEST-1".into(),
+            summary: None,
+            details: None,
+            affected: vec![OsvAffected {
+                package: Some(OsvPackage {
+                    ecosystem: "PyPI".into(),
+                    name: "django".into(),
+                }),
+                ranges: Some(vec![OsvRange {
+                    r#type: "ECOSYSTEM".into(),
+                    events: vec![
+                        OsvEvent {
+                            introduced: Some("0".into()),
+                            fixed: None,
+                        },
+                        OsvEvent {
+                            introduced: None,
+                            fixed: Some("4.2.7".into()),
+                        },
+                    ],
+                }]),
+                versions: None,
+            }],
+            references: vec![],
+            published: None,
+            modified: None,
+            severity: vec![],
+            database_specific: None,
+        };
+        // "4.2" is vulnerable per the range above (0 <= 4.2 < 4.2.7).
+        assert!(client.version_affected(&vuln, "4.2"));
+
+        // A fixed 2-part version should still be excluded.
+        assert!(!client.version_affected(&vuln, "4.3"));
     }
 }

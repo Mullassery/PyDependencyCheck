@@ -81,6 +81,24 @@ in the current release.
 - Moved `pyproject.toml`'s `[tool.ruff]` `select`/`ignore` keys into a new
   `[tool.ruff.lint]` table — `ruff check` was printing a deprecation
   warning on every run for the old top-level location.
+- `OsvClient::version_affected` (`crates/pydep-security/src/osv.rs`) parsed
+  the version being checked with strict semver only, so a 2-component
+  exact pin (`Django==4.2`, `numpy==1.24` — a fully valid, common PEP 440
+  version) failed to parse and silently skipped all SEMVER/ECOSYSTEM
+  range-based vulnerability matching for that dependency, falling back to
+  an exact-version-list match that real-world range advisories rarely
+  populate. Fixed by reusing the same `parse_lenient` 2-part-padding helper
+  already applied to OSV range bounds. See `ROADMAP_HONEST.md` for the
+  verification detail and a residual (larger, undone) PEP 440 gap this
+  doesn't cover.
+- `parse_constraints` (`crates/pydep-parser/src/constraint.rs`) was a
+  hand-rolled, broken parser: it hardcoded every dependency's
+  `version_constraint` to `None` regardless of what the file actually
+  said, and extracted the package name via `line.split('=').next()`,
+  which corrupts the name for any operator other than a bare `=` (e.g.
+  `"requests>=2.28.0,<3.0"` produced the name `"requests>"`). Fixed by
+  deleting the hand-rolled logic and delegating to the same
+  `parse_pep508_requirement` `requirements.txt` parsing already uses.
 
 ### Added
 - `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/dependabot.yml`,

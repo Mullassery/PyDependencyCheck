@@ -1,7 +1,7 @@
 # PyDependencyCheck — Honest Status
 
 **Current Version:** v1.4.0 (matches the version live on PyPI — no drift)
-**Last Updated:** 2026-09-21
+**Last Updated:** 2026-09-27
 
 This file exists to say plainly what's built-and-verified, what's built-but-unverified,
 what's not built yet, and what's actively broken in CI/release infrastructure —
@@ -13,6 +13,9 @@ instead of from what the README merely claims.
 
 - **Dependency parsing** — `requirements.txt`, `pyproject.toml` (PEP 621 + Poetry),
   `constraints.txt`; every PEP 508 version operator and extras (`crates/pydep-parser`).
+  (`constraints.txt` version-constraint parsing was actually broken until
+  2026-09-27 — see the entry below; this claim now holds for real, verified
+  by the new `constraint::tests` module.)
 - **Health scoring** — 4 real, independently-computed factors (vulnerabilities via
   OSV.dev, staleness via PyPI's JSON API, dead dependencies via AST import analysis,
   dependency-graph complexity).
@@ -33,8 +36,64 @@ instead of from what the README merely claims.
   bare version, so `health`/`gate` silently reported zero vulnerabilities for
   essentially every exactly-pinned dependency. Fixed, with a regression test
   (`crates/pydep-security/src/osv.rs`).
-- **46 Rust tests** (`cargo test --workspace`) — re-run 2026-09-20, all 46 pass,
-  plus `cargo clippy --workspace -- -D warnings` and `cargo fmt --check` both clean.
+- **2-part pinned-version range-matching bug (fixed 2026-09-27)** —
+  `OsvClient::version_affected` (`crates/pydep-security/src/osv.rs:177`)
+  parsed the *target* version being checked with strict `semver::Version::
+  parse` only. A 2-component exact pin is an everyday, fully valid PEP 440
+  version — `Django==4.2`, `numpy==1.24` — and strict semver parsing of
+  `"4.2"` fails (semver requires major.minor.patch). When that happened,
+  the code fell through to matching only against `affected[].versions`
+  (an exact-string list OSV rarely populates for range-based advisories),
+  silently skipping the SEMVER/ECOSYSTEM range-matching path entirely —
+  the same path `version_in_range`'s own `parse_lenient` helper already
+  pads 2-part range *bounds* for, per its own comment ("OSV ranges often
+  omit the patch component"). Net effect: any dependency pinned without a
+  patch component (very common) got compared against zero real OSV ranges,
+  so `health`/`gate` could silently report 0 vulnerabilities for a package
+  that actually has known, range-based CVEs. Verified before the fix with
+  a unit test: `version_affected(&vuln, "4.2")` against a vulnerable range
+  of `[0, 4.2.7)` returned `false`. Fixed by routing the target version
+  through the same `parse_lenient` used for range bounds, so `"4.2"` now
+  normalizes to `4.2.0` before comparison. Regression test added:
+  `two_part_pinned_version_matches_a_range` (`crates/pydep-security/src/
+  osv.rs`). Residual, smaller gap (not fixed, documented under "Technical
+  debt" below): PEP 440 versions with `.postN`/`.devN`/local-version
+  suffixes or 4+ numeric components (e.g. `1.4.2.post1`) still aren't
+  strict-or-lenient semver and still fall back to exact-string matching
+  only — a real PEP 440-to-semver normalizer is a bigger job than this
+  one-line lenient-parse fix.
+- **`constraints.txt` version parsing was silently broken end-to-end (fixed
+  2026-09-27)** — `parse_constraints` (`crates/pydep-parser/src/
+  constraint.rs`) was hand-rolled instead of reusing the existing,
+  well-tested `parse_pep508_requirement` that `requirements.txt` parsing
+  uses, and had two real, verified bugs: (1) `version_constraint` was
+  hardcoded to `None` for every line regardless of content — a package
+  pinned *only* via `constraints.txt` (a normal, documented pip use case)
+  had its exact version silently thrown away, so it could never be checked
+  against OSV for real vulnerabilities and would never appear correctly in
+  an SBOM; (2) the name was extracted via `line.split('=').next()`, which
+  corrupts the package name for any operator other than a bare `=` — e.g.
+  `"requests>=2.28.0,<3.0".split('=').next()` returns `"requests>"` (a
+  stray `>` character left attached to the name). Verified end-to-end
+  through the actual compiled extension before the fix: parsing a
+  constraints.txt containing `django==4.2.1` and `requests>=2.28.0,<3.0`
+  returned `name='django' version=None` and `name='requests>'
+  version=None`. Fixed by deleting the hand-rolled parser and delegating
+  to `parse_pep508_requirement` (the same function `requirements.txt`
+  parsing already uses and already has test coverage for extras/markers/
+  complex constraints) — after the fix the same input correctly returns
+  `name='django' version='==4.2.1'` and `name='requests'
+  version='>=2.28.0,<3.0'`. Three new regression tests added in
+  `crates/pydep-parser/src/constraint.rs`'s new `tests` module.
+- **50 Rust tests** (`cargo test --workspace`) — re-run 2026-09-27 (46
+  prior + 1 regression test for the OSV 2-part-version fix + 3 regression
+  tests for the constraints.txt fix), all 50 pass, plus `cargo clippy
+  --workspace -- -D warnings` and `cargo fmt --check` both clean. Python
+  suite re-run the same pass in a clean environment with a freshly built
+  wheel (`maturin build --release` + `pip install`): 142 passed, 12
+  skipped (otel-gated, same pattern as before), confirmed identical both
+  before and after both fixes above via a stash/rebuild/test round-trip
+  for each — no regressions from either fix.
 - **153 Python tests** (`pytest tests/`) — re-run 2026-09-20 in a clean venv with
   `maturin develop --release`: **136 pass unconditionally; 17 skip** (all in
   `tests/test_telemetry.py`, gated by `pytest.mark.skipif(not HAS_OTEL, ...)`).
@@ -275,6 +334,39 @@ installed (153/153 passing in that configuration):
   and committed this pass (see above) but has never been committed before,
   so there's no history yet of it catching a dependency drift — this is a
   "safety net that now exists" note, not a bug.
+- **`crates/pydep-security/src/scoring.rs`'s `RiskScorer::score_package`,
+  `compute_health_score`, `propagate_risk`, and `aggregate_risk` are dead
+  code, and unlike `python/pydependencycheck/vulnerabilities.py` (which
+  discloses in its own docstring that it's kept for reference but unused),
+  nothing in-repo says so.** Verified 2026-09-27 by grepping every `.rs`
+  file for `RiskScorer`/`scoring::`: the only call site outside
+  `scoring.rs`'s own tests is `osv.rs:348`'s use of `cvss_to_severity` (a
+  different, small function). The real `health` command's score comes
+  entirely from `python/pydependencycheck/health.py`'s independent
+  `HealthAnalyzer` (bucketed-threshold heuristics), which duplicates the
+  *concept* of `RiskScorer` in Python with different weights/formulas and
+  never calls into the Rust version at all — so the two scoring
+  implementations can (and likely already do) disagree with each other,
+  and only one of them is reachable from the CLI. Not fixed (this is a
+  judgment call about which implementation should be the real one, and
+  which to delete/wire up/disclose — an architectural decision, not a
+  one-line fix). Flagging with file:line for a future session:
+  `crates/pydep-security/src/scoring.rs:14` (`score_package`), `:86`
+  (`compute_health_score`), `:66` (`propagate_risk`), `:147`
+  (`aggregate_risk`).
+- **PEP 440 versions that aren't valid semver even after 2-part lenient
+  padding still silently skip OSV range-matching** — residual gap from the
+  2-part-version fix above (`crates/pydep-security/src/osv.rs`'s
+  `version_affected`). Versions with `.postN`/`.devN`/local-version
+  suffixes (`1.4.2.post1`, `2.0.0.dev0+local`) or 4+ numeric components
+  don't parse as semver even with the existing `parse_lenient` padding, so
+  they still fall back to exact-string matching against
+  `affected[].versions` only, silently missing real range-based
+  vulnerabilities for packages pinned with these (less common than 2-part,
+  but real) version styles. **Warrants a dedicated session** — needs an
+  actual PEP 440-to-semver normalizer (map `.postN`/`.devN` to semver
+  pre-release/build metadata syntax), not a one-line lenient-parse
+  extension like the 2-part fix was.
 
 ## Tracking this for future roadmap planning
 

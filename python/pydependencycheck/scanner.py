@@ -146,17 +146,12 @@ class DependencyScanner:
         nested_project_dirs = self._find_nested_project_dirs()
 
         def _in_nested_project(path: Path) -> bool:
-            return any(
-                nested_dir == path.parent or nested_dir in path.parents
-                for nested_dir in nested_project_dirs
-            )
+            return any(nested_dir == path.parent or nested_dir in path.parents for nested_dir in nested_project_dirs)
 
         found = []
         for pattern in self.DEPENDENCY_FILES:
             matches = list(self.project_path.glob(f"**/{pattern}"))
-            found.extend(
-                m for m in matches if not self._is_ignored(m) and not _in_nested_project(m)
-            )
+            found.extend(m for m in matches if not self._is_ignored(m) and not _in_nested_project(m))
 
         self.found_files = found
         logger.info(f"Found {len(found)} dependency files: {[f.name for f in found]}")

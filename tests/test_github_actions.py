@@ -1,7 +1,6 @@
 """Tests for GitHub Actions CI gating and annotation output."""
 
 import pytest
-
 from pydependencycheck.github_actions import GitHubActionsReporter, create_github_actions_workflow
 
 

@@ -10,19 +10,19 @@ mod security;
 fn _pydependencycheck(py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
 
-    let parser_module = PyModule::new_bound(py, "parser")?;
+    let parser_module = PyModule::new(py, "parser")?;
     parser::register_parser(&parser_module)?;
     m.add_submodule(&parser_module)?;
 
-    let graph_module = PyModule::new_bound(py, "graph")?;
+    let graph_module = PyModule::new(py, "graph")?;
     graph::register_graph(&graph_module)?;
     m.add_submodule(&graph_module)?;
 
-    let security_module = PyModule::new_bound(py, "security")?;
+    let security_module = PyModule::new(py, "security")?;
     security::register_security(&security_module)?;
     m.add_submodule(&security_module)?;
 
-    let ast_module = PyModule::new_bound(py, "ast")?;
+    let ast_module = PyModule::new(py, "ast")?;
     ast::register_ast(&ast_module)?;
     m.add_submodule(&ast_module)?;
 

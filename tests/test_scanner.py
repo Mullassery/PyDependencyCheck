@@ -1,7 +1,6 @@
 """Tests for the dependency scanner"""
 
 import pytest
-
 from pydependencycheck.scanner import DependencyScanner, ScanResult
 
 
@@ -127,15 +126,11 @@ dependencies = ["requests>=2.0"]
         parent project's totals. Any directory with its own
         pyproject.toml/setup.py/setup.cfg is now treated as a separate
         project boundary and excluded from the parent scan."""
-        (tmp_path / "pyproject.toml").write_text(
-            '[project]\nname = "main-app"\ndependencies = ["flask>=2.0.0"]\n'
-        )
+        (tmp_path / "pyproject.toml").write_text('[project]\nname = "main-app"\ndependencies = ["flask>=2.0.0"]\n')
 
         nested = tmp_path / "examples" / "celery"
         nested.mkdir(parents=True)
-        (nested / "pyproject.toml").write_text(
-            '[project]\nname = "celery-example"\ndependencies = []\n'
-        )
+        (nested / "pyproject.toml").write_text('[project]\nname = "celery-example"\ndependencies = []\n')
         (nested / "requirements.txt").write_text("celery==5.2.7\namqp==5.1.1\n")
 
         scanner = DependencyScanner(str(tmp_path))

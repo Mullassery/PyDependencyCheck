@@ -8,7 +8,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
-
 from pydependencycheck.cli import cli
 
 
@@ -119,7 +118,7 @@ class TestExportCommand:
         doesn't reproduce Rich's terminal-width-based wrapping the way a
         real redirected stdout does.
         """
-        cryptography = pytest.importorskip("cryptography")
+        pytest.importorskip("cryptography")
         from pydependencycheck.sbom import SBOMSigner
 
         key_path = project / "key.pem"

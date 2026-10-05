@@ -21,8 +21,7 @@ import subprocess
 import sys
 
 import pytest
-
-from pydependencycheck.telemetry import TelemetryConfig, TelemetryManager, HAS_OTEL
+from pydependencycheck.telemetry import HAS_OTEL, TelemetryConfig, TelemetryManager
 
 pytestmark = pytest.mark.skipif(not HAS_OTEL, reason="opentelemetry-api/sdk not installed")
 

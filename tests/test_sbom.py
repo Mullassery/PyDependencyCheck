@@ -3,9 +3,7 @@
 import json
 
 import pytest
-
 from pydependencycheck.sbom import SBOMGenerator, SBOMSigner
-
 
 SAMPLE_DEPS = [
     {"name": "requests", "version": "2.32.0", "direct": True, "source": "requirements.txt"},
@@ -73,7 +71,7 @@ class TestIntegrityHash:
 
 @pytest.fixture
 def rsa_keypair(tmp_path):
-    cryptography = pytest.importorskip("cryptography")
+    pytest.importorskip("cryptography")
     private_path = tmp_path / "key.pem"
     signer = SBOMSigner()
     signer.generate_keys(str(private_path))

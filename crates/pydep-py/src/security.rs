@@ -1,7 +1,7 @@
 use pydep_security::{OsvClient, Severity};
 use pyo3::prelude::*;
 
-#[pyclass]
+#[pyclass(skip_from_py_object)]
 #[derive(Clone)]
 pub enum PySeverity {
     Critical,
@@ -33,7 +33,7 @@ fn severity_str(s: Severity) -> &'static str {
     }
 }
 
-#[pyclass]
+#[pyclass(skip_from_py_object)]
 #[derive(Clone)]
 pub struct Vulnerability {
     #[pyo3(get)]

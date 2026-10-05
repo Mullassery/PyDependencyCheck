@@ -11,9 +11,33 @@ real commit-level history of those releases, and
 [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
-## [Unreleased]
+## [1.4.1] - 2026-10-05
+
+### Security
+- Bumped `reqwest` 0.11→0.12 (pulls `rustls` 0.23, `rustls-webpki` 0.103,
+  `hyper-rustls` 0.27, `h2` 0.4), resolving RUSTSEC-2026-0258 (h2 unbounded
+  empty DATA frames), RUSTSEC-2026-0104/0098/0099 (rustls-webpki name
+  constraint bugs), and RUSTSEC-2025-0134 (rustls-pemfile unmaintained).
+- Bumped `pyo3` 0.21→0.29, resolving RUSTSEC-2025-0020 (buffer overflow risk
+  in `PyString::from_object`). Required fixing `PyModule::new_bound` call
+  sites in `crates/pydep-py/src/lib.rs` (renamed to `PyModule::new` — the
+  `_bound` suffix APIs were removed once `Bound<>` became the pyo3 default)
+  and opting `PySeverity`/`Vulnerability` out of the now-deprecated
+  auto-derived `FromPyObject` via `#[pyclass(skip_from_py_object)]` (neither
+  type is ever extracted from a Python argument, only returned to Python).
+  This also unblocks the previously-failing Dependabot PR proposing the same
+  pyo3 bump.
+- One residual advisory, RUSTSEC-2025-0009 (`ring` 0.17.9, AES overflow-check
+  panic, debug-build-only impact), could not be resolved via `cargo update`
+  due to a resolver lock conflict with `cc`; left open and documented rather
+  than risk destabilizing the lockfile — see TECHNICAL_DEBT.md TD-0005.
 
 ### Fixed
+- Lint drift: 5 ruff import-sort errors and 2 `F841` unused-variable findings
+  (`cryptography = pytest.importorskip(...)` pattern) in
+  `tests/test_cli.py`/`tests/test_sbom.py`; 2 files reformatted by `black`
+  (`scanner.py`, `tests/test_scanner.py`). Same recurring formatting-drift
+  pattern already noted in the 2026-09 OSS maturity pass.
 - `pyproject.toml` classifier mismatch: metadata declared `License :: Other/
   Proprietary License` while `license = "Apache-2.0"` and `LICENSE` are Apache
   2.0 (the classifier predates the 2026-09 relicense and was never updated).

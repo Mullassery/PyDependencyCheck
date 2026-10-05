@@ -747,13 +747,13 @@ dependencies = [
 
 [[package]]
 name = "pydep-ast"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "rayon",
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tracing",
  "tree-sitter",
  "tree-sitter-python",
@@ -761,7 +761,7 @@ dependencies = [
 
 [[package]]
 name = "pydep-graph"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "petgraph",
  "pydep-parser",
@@ -769,27 +769,27 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tracing",
 ]
 
 [[package]]
 name = "pydep-parser"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "rayon",
  "regex",
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "toml",
  "tracing",
 ]
 
 [[package]]
 name = "pydep-security"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "dirs",
  "mockito",
@@ -798,14 +798,14 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
 ]
 
 [[package]]
 name = "pydependencycheck"
-version = "1.4.0"
+version = "1.4.1"
 dependencies = [
  "pydep-ast",
  "pydep-graph",
@@ -814,7 +814,7 @@ dependencies = [
  "pyo3",
  "serde",
  "serde_json",
- "thiserror 1.0.69",
+ "thiserror 2.0.21",
  "tracing",
 ]
 

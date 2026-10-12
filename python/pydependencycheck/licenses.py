@@ -191,6 +191,25 @@ class LicenseAnalyzer:
             if key in normalized:
                 return value
 
+        # Bare, already-valid SPDX identifiers in non-canonical casing
+        # (e.g. "mit", "apache-2.0", "bsd-3-clause") fall through the
+        # phrase-based mappings above untouched. SPDX identifiers are
+        # matched case-insensitively per the SPDX spec itself, and PEP 639
+        # explicitly permits lowercase SPDX expressions in `pyproject.toml`
+        # (`license = "mit"`), so PyPI's `license` metadata field commonly
+        # contains one of these already-correct-but-not-canonically-cased
+        # forms. Previously this function returned the raw, un-normalized
+        # `license_name` here instead of a canonical id, so `_classify_risk`
+        # and `check_compatibility`'s exact-string comparisons against
+        # `PERMISSIVE_LICENSES`/`COPYLEFT_LICENSES`/`RESTRICTED_LICENSES`
+        # silently failed for any casing other than the exact canonical
+        # form -- e.g. "mit" and "apache-2.0" were classified "unknown"
+        # instead of "permissive".
+        known_spdx = PERMISSIVE_LICENSES | COPYLEFT_LICENSES | RESTRICTED_LICENSES
+        for canonical in known_spdx:
+            if canonical.upper() == normalized:
+                return canonical
+
         return license_name
 
     def analyze_project_licenses(self, dependencies: List[Dict]) -> Dict[str, any]:

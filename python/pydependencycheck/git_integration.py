@@ -94,8 +94,11 @@ class GitIntegration:
                     # Get blame for this file
                     blame_data = list(self.repo.blame("HEAD", file_path))
 
+                    # GitPython yields (commit, lines) for each *contiguous hunk*,
+                    # so track the cumulative 1-based line offset across hunks.
+                    line_offset = 0
                     for commit, lines in blame_data:
-                        for line in lines:
+                        for idx, line in enumerate(lines):
                             # Check if package name is in this line
                             if self._is_package_in_line(package, line):
                                 info.commit_hash = commit.hexsha
@@ -105,8 +108,9 @@ class GitIntegration:
                                 info.timestamp = datetime.fromtimestamp(commit.committed_date)
                                 info.message = commit.message.split("\n")[0]
                                 info.file = file_path
-                                info.line_no = len(lines)
+                                info.line_no = line_offset + idx + 1
                                 return info
+                        line_offset += len(lines)
                 except GitCommandError as e:
                     logger.debug(f"Git blame failed for {file_path}: {e}")
                     continue

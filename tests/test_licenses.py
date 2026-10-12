@@ -48,6 +48,26 @@ class TestLicenseAnalyzerClassification:
 
         assert info.risk_level == "copyleft"
 
+    def test_lowercase_bare_spdx_license_field_is_still_permissive(self):
+        """Regression test for a real bug: `_normalize_license`'s final
+        fallback returned the raw, un-normalized `license_name` instead of
+        a canonical SPDX id whenever a license string didn't match one of
+        the hand-written phrase mappings (e.g. "MIT LICENSE" -> "MIT").
+        A bare, already-valid SPDX identifier in non-canonical casing --
+        "mit", "apache-2.0", "bsd-3-clause" -- is exactly this case: PyPI's
+        `license` metadata field commonly contains one (PEP 639 explicitly
+        permits lowercase SPDX expressions in `pyproject.toml`), and SPDX
+        itself matches identifiers case-insensitively. Before the fix,
+        `_normalize_license("mit")` returned `"mit"` (not `"MIT"`), so the
+        exact-string comparison against `PERMISSIVE_LICENSES` failed and
+        the package was classified "unknown" instead of "permissive"."""
+        analyzer = LicenseAnalyzer()
+        for raw in ("mit", "Mit", "apache-2.0", "bsd-3-clause"):
+            with patch("pydependencycheck.licenses.requests.get") as mock_get:
+                mock_get.return_value = _mock_pypi_response(license_field=raw)
+                info = analyzer.analyze_package(f"pkg-with-{raw}-license")
+            assert info.risk_level == "permissive", f"{raw!r} should classify as permissive"
+
     def test_no_license_data_is_unknown(self):
         analyzer = LicenseAnalyzer()
         with patch("pydependencycheck.licenses.requests.get") as mock_get:

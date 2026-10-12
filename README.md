@@ -1,5 +1,7 @@
 # PyDependencyCheck
 
+[![Grapify](https://img.shields.io/badge/Grapify-Code%20Scan-purple)](https://grapify.ai)
+
 ## Problem
 
 Most dependency tooling tells you *what* you depend on. It rarely tells you *why* a

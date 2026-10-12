@@ -69,3 +69,5 @@ target/
 # Logs
 *.log
 logs/
+
+.venv-test/

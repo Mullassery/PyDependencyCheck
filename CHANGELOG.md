@@ -11,6 +11,43 @@ real commit-level history of those releases, and
 [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
+## [1.4.2] - 2026-10-12
+
+### Fixed
+- `OsvClient::version_affected` (`crates/pydep-security/src/osv.rs`) parsed
+  the version being checked with strict semver only, so a 2-component
+  exact pin (`Django==4.2`, `numpy==1.24` — a fully valid, common PEP 440
+  version) failed to parse and silently skipped all SEMVER/ECOSYSTEM
+  range-based vulnerability matching for that dependency, falling back to
+  an exact-version-list match that real-world range advisories rarely
+  populate. Fixed by reusing the same `parse_lenient` 2-part-padding helper
+  already applied to OSV range bounds. See `ROADMAP_HONEST.md` for the
+  verification detail and a residual (larger, undone) PEP 440 gap this
+  doesn't cover.
+- `parse_constraints` (`crates/pydep-parser/src/constraint.rs`) was a
+  hand-rolled, broken parser: it hardcoded every dependency's
+  `version_constraint` to `None` regardless of what the file actually
+  said, and extracted the package name via `line.split('=').next()`,
+  which corrupts the name for any operator other than a bare `=` (e.g.
+  `"requests>=2.28.0,<3.0"` produced the name `"requests>"`). Fixed by
+  deleting the hand-rolled logic and delegating to the same
+  `parse_pep508_requirement` `requirements.txt` parsing already uses.
+- `GitIntegration.get_package_info` (`python/pydependencycheck/git_integration.py`)
+  reported the wrong line number for any package that appears in a file
+  with more than one `git blame` hunk: `GitPython` yields `(commit, lines)`
+  per *contiguous hunk*, but the code set `info.line_no = len(lines)`
+  (the hunk's own length) instead of the line's absolute position. Now
+  tracks a cumulative offset across hunks.
+- `LicenseAnalyzer._normalize_license` (`python/pydependencycheck/licenses.py`)
+  returned the raw license string in its final fallback, so a bare SPDX
+  identifier in non-canonical casing (e.g. `"mit"`, `"apache-2.0"`,
+  `"bsd-3-clause"` — exactly what PyPI's `license` metadata commonly
+  contains, since PEP 639 permits lowercase SPDX expressions) was never
+  mapped to a canonical id and was classified `unknown` instead of
+  `permissive`, since `_classify_risk`/`check_compatibility` compare with
+  exact-case string equality. Now maps case-insensitively to the canonical
+  SPDX id. Adds a regression test (`tests/test_licenses.py`).
+
 ## [1.4.1] - 2026-10-05
 
 ### Security
@@ -81,24 +118,6 @@ in the current release.
 - Moved `pyproject.toml`'s `[tool.ruff]` `select`/`ignore` keys into a new
   `[tool.ruff.lint]` table — `ruff check` was printing a deprecation
   warning on every run for the old top-level location.
-- `OsvClient::version_affected` (`crates/pydep-security/src/osv.rs`) parsed
-  the version being checked with strict semver only, so a 2-component
-  exact pin (`Django==4.2`, `numpy==1.24` — a fully valid, common PEP 440
-  version) failed to parse and silently skipped all SEMVER/ECOSYSTEM
-  range-based vulnerability matching for that dependency, falling back to
-  an exact-version-list match that real-world range advisories rarely
-  populate. Fixed by reusing the same `parse_lenient` 2-part-padding helper
-  already applied to OSV range bounds. See `ROADMAP_HONEST.md` for the
-  verification detail and a residual (larger, undone) PEP 440 gap this
-  doesn't cover.
-- `parse_constraints` (`crates/pydep-parser/src/constraint.rs`) was a
-  hand-rolled, broken parser: it hardcoded every dependency's
-  `version_constraint` to `None` regardless of what the file actually
-  said, and extracted the package name via `line.split('=').next()`,
-  which corrupts the name for any operator other than a bare `=` (e.g.
-  `"requests>=2.28.0,<3.0"` produced the name `"requests>"`). Fixed by
-  deleting the hand-rolled logic and delegating to the same
-  `parse_pep508_requirement` `requirements.txt` parsing already uses.
 
 ### Added
 - `SECURITY.md`, `CODE_OF_CONDUCT.md`, `.github/dependabot.yml`,

@@ -21,7 +21,7 @@ None found.
 
 | ID | Category | Description | Source | Status | Fix |
 |---|---|---|---|---|---|
-| TD-0001 | CI_CD | PyPI publish job (`wheels.yml` `publish` job) references `secrets.PYPI_API_TOKEN`, but `gh secret list` confirms **no secrets are configured on this repo at all**. The job has never actually run (only triggers on `refs/tags/v*`, and no version tag has ever been pushed), but it is guaranteed to fail the moment one is. | CI_FAILURE (verified live via `gh secret list` + `gh run list`) | OPEN | Requires a human to either add a `PYPI_API_TOKEN` repo secret or migrate to PyPI Trusted Publishing (OIDC) — out of scope for this pass (no repo-settings/PyPI-project-settings access). |
+| TD-0001 | CI_CD | PyPI publish job (`wheels.yml` `publish` job) referenced `secrets.PYPI_API_TOKEN`, but `gh secret list` confirmed **no secrets are configured on this repo at all**. The job has never actually run (only triggers on `refs/tags/v*`, and no version tag has ever been pushed), but it was guaranteed to fail the moment one was. | CI_FAILURE (verified live via `gh secret list` + `gh run list`) | **FIXED (workflow)** — migrated to PyPI Trusted Publishing (OIDC): the `publish` job now grants `id-token: write` and passes no `password`, so it no longer depends on an unconfigured repo secret. Remaining human step: register a Trusted Publisher for `Mullassery/PyDependencyCheck` (workflow `wheels.yml`, job `publish`) on PyPI — out of scope here (no PyPI-project-settings access). |
 
 ## P2 — Medium
 
@@ -60,7 +60,7 @@ None found.
 
 ## CI/CD Debt
 
-- TD-0001 (PyPI publish secret missing — HIGH, OPEN)
+- TD-0001 (PyPI publish secret missing — HIGH; workflow migrated to OIDC Trusted Publishing, only the PyPI-side publisher registration remains)
 - `actionlint` run clean across all 3 workflow files (`ci.yml`, `security-audit.yml`, `wheels.yml`) — no syntax/schema issues.
 - `wheels.yml` has a documented, reasonable workaround for macOS runner capacity issues (cross-compiling the Intel wheel from Apple Silicon) — not debt, good practice already in place.
 

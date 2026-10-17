@@ -11,6 +11,11 @@ real commit-level history of those releases, and
 [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
+## [1.4.3] - 2026-10-17
+
+### Fixed
+- Audit remediation: security hardening, correctness fixes, and lint/CI gates.
+
 ## [1.4.2] - 2026-10-12
 
 ### Fixed

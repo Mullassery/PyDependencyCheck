@@ -123,11 +123,6 @@ pydependencycheck gate --min-health 50
 
 Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
 
-## Queue status
-
-Shipped, blocked/failed, and rejected work for this repository is documented in
-[`QUEUE_STATUS.md`](QUEUE_STATUS.md).
-
 ## Documentation
 
 - [Installation notes](.github/INSTALL.md)

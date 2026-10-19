@@ -113,6 +113,16 @@ pydependencycheck gate --min-health 50
 | `export` | Export SBOM in CycloneDX/SPDX (optionally signed) |
 | `gate` | CI gate with exit code and annotations |
 
+## Known issues and deferred work
+
+**Blocked / failed:**
+- Merge with/define boundary vs PyDeepMesh; SARIF + Action.
+
+**Rejected / deferred:**
+- Duplicate multi-ecosystem scanning.
+
+Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+
 ## Queue status
 
 Shipped, blocked/failed, and rejected work for this repository is documented in

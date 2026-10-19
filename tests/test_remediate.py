@@ -189,9 +189,9 @@ class TestBuildRemediationPlanAndApply:
 
         # A fix is computed (there IS a known fix)...
         assert plan.has_fixes
-        # ...but setup.py isn't a format the patcher understands, so no
-        # file patch is produced for it.
-        assert plan.patches == {}
+        # ...and setup.py pins are now patchable too.
+        assert "setup.py" in plan.patches
+        assert "requests==2.31.0" in plan.patches["setup.py"][1]
 
 
 @pytest.fixture

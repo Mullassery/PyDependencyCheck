@@ -11,6 +11,16 @@ real commit-level history of those releases, and
 [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
+## [1.5.0] - 2026-10-19
+
+### Added
+- Static `setup.py` (AST) and `setup.cfg` dependency discovery, including
+  `install_requires` and `extras_require`, with explicit warnings for dynamic
+  metadata instead of silently reporting no dependencies.
+- Exact-pin remediation for `setup.py` and `setup.cfg`.
+- `pydependencycheck vex` export of OSV findings as CycloneDX 1.6 VEX, defaulting
+  to `under_investigation` unless a stronger state is explicitly requested.
+
 ## [1.4.3] - 2026-10-17
 
 ### Fixed

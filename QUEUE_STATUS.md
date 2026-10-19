@@ -4,6 +4,8 @@ This file records what was shipped, what is blocked/failed, and what is rejected
 
 ## Shipped
 - No code changes; audit/bundle docs added.
+- Static setup.py/setup.cfg dependency discovery and remediation.
+- CycloneDX 1.6 VEX export (`pydependencycheck vex`).
 
 ## Blocked / failed
 - Merge with/define boundary vs PyDeepMesh; SARIF + Action.

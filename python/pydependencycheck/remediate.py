@@ -178,6 +178,36 @@ def patch_pyproject_content(content: str, fixes: List[PackageFix]) -> str:
     return content
 
 
+def _quoted_pin_pattern(name: str) -> "re.Pattern[str]":
+    """Match a quoted setup-style pin such as ``"requests==2.32.0"``.
+
+    The closing quote is captured separately and preserved when patching.
+    """
+    escaped = re.escape(name)
+    flexible = re.sub(r"\\[-_.]", "[-_.]", escaped)
+    return re.compile(
+        rf"([\"']{flexible}(?:\[[^\]\"']*\])?==)([^\s\";,]+)([\"'])",
+        re.IGNORECASE,
+    )
+
+
+def _unquoted_pin_pattern(name: str) -> "re.Pattern[str]":
+    """Match a setup.cfg-style unquoted pin (``requests==2.32.0``)."""
+    escaped = re.escape(name)
+    flexible = re.sub(r"\\[-_.]", "[-_.]", escaped)
+    return re.compile(
+        rf"^([ \t]*{flexible}(?:\[[^\]]*\])?[ \t]*==[ \t]*)([^\s;#]+)",
+        re.IGNORECASE | re.MULTILINE,
+    )
+
+
+def patch_setup_content(content: str, fixes: List[PackageFix]) -> str:
+    for fix in fixes:
+        content = _quoted_pin_pattern(fix.name).sub(lambda m: m.group(1) + fix.fix_version + m.group(3), content)
+        content = _unquoted_pin_pattern(fix.name).sub(lambda m: m.group(1) + fix.fix_version, content)
+    return content
+
+
 def _patch_file(file_path: Path, fixes: List[PackageFix]) -> Optional[str]:
     content = file_path.read_text(encoding="utf-8")
     name_lower = file_path.name.lower()
@@ -186,10 +216,9 @@ def _patch_file(file_path: Path, fixes: List[PackageFix]) -> Optional[str]:
         new_content = patch_requirements_content(content, fixes)
     elif name_lower == "pyproject.toml":
         new_content = patch_pyproject_content(content, fixes)
+    elif name_lower in ("setup.py", "setup.cfg"):
+        new_content = patch_setup_content(content, fixes)
     else:
-        # setup.py/setup.cfg and other formats aren't remediated
-        # automatically -- same limitation the scanner has parsing them
-        # (see DependencyScanner._parse_setup_file).
         return None
 
     return new_content if new_content != content else None

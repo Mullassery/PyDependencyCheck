@@ -57,7 +57,27 @@ PyDependencyCheck helps you understand not just *what* you depend on, but *why* 
 
 ## Project status
 
-PyDependencyCheck is in beta (v1.4.2). Core features (scanning, provenance, health scoring, vulnerability checks, licensing, SBOM export, CI gating) are implemented. See [CHANGELOG.md](CHANGELOG.md) for recent fixes and updates.
+PyDependencyCheck is in beta (v1.5.0). Core features (scanning, provenance, health scoring, vulnerability checks, licensing, SBOM export, CI gating) are implemented. See [CHANGELOG.md](CHANGELOG.md) for recent fixes and updates.
+
+### setup.py / setup.cfg support
+
+Static `install_requires` and `extras_require` declarations in `setup.py`
+(AST, never executed) and `setup.cfg` are now included in the dependency
+graph and can be patched by `pydependencycheck remediate`. Dynamic metadata
+such as `install_requires=read_requirements()` cannot be resolved statically;
+the scanner emits an explicit warning instead of silently treating the
+project as dependency-free.
+
+## CycloneDX VEX export
+
+Export OSV findings as a CycloneDX 1.6 VEX document:
+
+```bash
+pydependencycheck vex . --output vex.json --state under_investigation
+```
+
+Without runtime reachability the default state is `under_investigation`, not
+`not_affected` — missing evidence is never presented as a clean result.
 
 ## Installation
 

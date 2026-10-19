@@ -1,6 +1,6 @@
 """PyDependencyCheck: Dependency Intelligence and Governance Platform"""
 
-__version__ = "1.4.3"
+__version__ = "1.5.0"
 __author__ = "Georgi Mammen Mullassery"
 __email__ = "mullassery@gmail.com"
 __license__ = "Apache-2.0"

@@ -657,6 +657,33 @@ def _format_table_report(result: ScanResult) -> str:
     return "\n".join(lines)
 
 
+@cli.command()
+@click.argument("path", type=click.Path(exists=True), default=".")
+@click.option("--output", "-o", type=click.Path(), required=True)
+@click.option(
+    "--state",
+    type=click.Choice(["under_investigation", "affected", "not_affected", "fixed"]),
+    default="under_investigation",
+)
+def vex(path: str, output: str, state: str):
+    """Export OSV findings as a CycloneDX VEX document."""
+    from pathlib import Path as _Path
+
+    from .vex import write_vex
+
+    scanner = DependencyScanner(path)
+    with console.status("[bold]Scanning dependencies and advisories...[/bold]"):
+        scanner.scan()
+        vulnerabilities = scanner.check_vulnerabilities()
+    write_vex(
+        vulnerabilities,
+        output,
+        project_name=_Path(path).resolve().name,
+        state=state,
+    )
+    console.print(f"[green]✓[/green] VEX written to [bold]{output}[/bold]")
+
+
 def main():
     """Main entry point"""
     try:

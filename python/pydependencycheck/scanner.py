@@ -189,13 +189,12 @@ class DependencyScanner:
         self.parsed_deps = list(dependencies.values())
         return self.parsed_deps
 
-    # File types the Rust PEP 508 parser (crates/pydep-parser) fully
-    # supports: requirements*.txt, constraints.txt, pyproject.toml. It
-    # correctly handles every version operator (>=, <=, ~=, !=, ...), extras,
-    # and environment markers -- the pure-Python fallback below only ever
-    # recognized "==". setup.py/setup.cfg parsing isn't implemented on
-    # either side yet (see `_parse_setup_file`).
-    _RUST_PARSEABLE = ("constraints.txt", "pyproject.toml")
+    # File types routed through the Rust PEP 508 parser (crates/pydep-parser):
+    # requirements*.txt, constraints.txt, pyproject.toml, setup.py and
+    # setup.cfg. The Rust parser handles setup.py literal install_requires;
+    # when it returns nothing for a setup file, `_parse_file` falls back to
+    # the static AST/configparser implementation in `_parse_setup_file`.
+    _RUST_PARSEABLE = ("constraints.txt", "pyproject.toml", "setup.py", "setup.cfg")
 
     def _parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
         """Parse a single dependency file"""
@@ -204,7 +203,17 @@ class DependencyScanner:
 
         if HAS_RUST_BACKEND and rust_supported:
             try:
-                return self._parse_file_rust(file_path)
+                parsed = self._parse_file_rust(file_path)
+                # The Rust setup.py parser only handles a literal
+                # install_requires=[...] block.  When it finds nothing, fall
+                # back to the Python AST/configparser path instead of
+                # silently reporting a dependency-free project.
+                if parsed or file_name not in ("setup.py", "setup.cfg"):
+                    return parsed
+                logger.info(
+                    "Rust parser found no dependencies in %s; trying Python fallback",
+                    file_path,
+                )
             except Exception as e:
                 logger.warning(f"Rust parser failed for {file_path}, falling back to Python parser: {e}")
 
@@ -363,10 +372,132 @@ class DependencyScanner:
             return []
 
     def _parse_setup_file(self, file_path: Path) -> List[Dict[str, Any]]:
-        """Parse setup.py or setup.cfg"""
-        # TODO: Implement proper setup.py AST parsing
-        logger.warning(f"setup.py/setup.cfg parsing not yet implemented: {file_path}")
-        return []
+        """Parse setup.py (static AST) or setup.cfg (configparser).
+
+        Dynamic metadata (e.g. ``install_requires=read_requirements()``) cannot
+        be resolved statically.  In that case the file is skipped with a
+        warning; it is never reported as dependency-free silently.
+        """
+        if file_path.name.lower() == "setup.cfg":
+            return self._parse_setup_cfg(file_path)
+        return self._parse_setup_py(file_path)
+
+    def _dep_from_requirement(self, requirement: str, file_path: Path, *, dev: bool = False) -> List[Dict[str, Any]]:
+        """Normalize one PEP 508 requirement using the existing parser."""
+        requirement = requirement.strip()
+        if not requirement or requirement.startswith("#"):
+            return []
+        parsed = self._parse_pep508(requirement, file_path, dev=dev)
+        if parsed:
+            return parsed
+        # _parse_pep508 may return [] for unusual markers; keep a minimal
+        # fallback so a declared dependency is never dropped.
+        name = re.split(r"[<>=!~;\[]", requirement, maxsplit=1)[0].strip()
+        if not name:
+            return []
+        return [
+            {
+                "name": name.lower().replace("_", "-"),
+                "version": None,
+                "source": str(file_path.relative_to(self.project_path)),
+                "direct": True,
+                "dev": dev,
+            }
+        ]
+
+    def _parse_setup_cfg(self, file_path: Path) -> List[Dict[str, Any]]:
+        """Parse [options] install_requires and extras_require from setup.cfg."""
+        import configparser
+
+        parser = configparser.ConfigParser()
+        try:
+            parser.read(file_path, encoding="utf-8")
+        except Exception as e:
+            logger.warning("Failed to parse %s: %s", file_path, e)
+            return []
+
+        dependencies: List[Dict[str, Any]] = []
+
+        def add_multiline(value: str, *, dev: bool) -> None:
+            for line in value.splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                dependencies.extend(self._dep_from_requirement(line, file_path, dev=dev))
+
+        if parser.has_option("options", "install_requires"):
+            add_multiline(parser.get("options", "install_requires"), dev=False)
+
+        if parser.has_section("options.extras_require"):
+            for _group, value in parser.items("options.extras_require"):
+                add_multiline(value, dev=True)
+
+        if not dependencies:
+            logger.warning(
+                "No static dependencies found in %s. If install_requires is "
+                "computed dynamically, add a requirements file or run the "
+                "scanner after installation.",
+                file_path,
+            )
+        return dependencies
+
+    def _parse_setup_py(self, file_path: Path) -> List[Dict[str, Any]]:
+        """Statically parse a setup.py call without executing it."""
+        import ast
+
+        try:
+            source = file_path.read_text(encoding="utf-8")
+            tree = ast.parse(source, filename=str(file_path))
+        except Exception as e:
+            logger.warning("Failed to parse %s: %s", file_path, e)
+            return []
+
+        dependencies: List[Dict[str, Any]] = []
+        found_setup_call = False
+
+        def literal_strings(node: ast.AST) -> List[str]:
+            if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+                values: List[str] = []
+                for elt in node.elts:
+                    if isinstance(elt, ast.Constant) and isinstance(elt.value, str):
+                        values.append(elt.value)
+                    elif isinstance(elt, ast.BinOp) and isinstance(elt.op, ast.Add):
+                        values.extend(literal_strings(elt.left))
+                        values.extend(literal_strings(elt.right))
+                return values
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                return [node.value]
+            if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+                return literal_strings(node.left) + literal_strings(node.right)
+            return []
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            func = node.func
+            name = func.id if isinstance(func, ast.Name) else func.attr if isinstance(func, ast.Attribute) else None
+            if name != "setup":
+                continue
+            found_setup_call = True
+            for kw in node.keywords:
+                if kw.arg == "install_requires":
+                    for req in literal_strings(kw.value):
+                        dependencies.extend(self._dep_from_requirement(req, file_path, dev=False))
+                elif kw.arg == "extras_require" and isinstance(kw.value, ast.Dict):
+                    for value_node in kw.value.values:
+                        for req in literal_strings(value_node):
+                            dependencies.extend(self._dep_from_requirement(req, file_path, dev=True))
+
+        if not found_setup_call:
+            logger.warning("No setup() call found in %s", file_path)
+        elif not dependencies:
+            logger.warning(
+                "No static dependencies found in %s. If install_requires is "
+                "computed dynamically, add a requirements file or run the "
+                "scanner after installation.",
+                file_path,
+            )
+        return dependencies
 
     def scan(self) -> ScanResult:
         """Execute full dependency scan"""

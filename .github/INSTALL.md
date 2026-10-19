@@ -10,8 +10,9 @@ pip install pydependencycheck
 
 - Python 3.8+
 - macOS, Linux (x86_64), or Windows (x86_64) with a prebuilt wheel available;
-  see [What's not working / open issues](../README.md#whats-not-working--open-issues)
-  in the README for current CI/release gaps.
+  wheel coverage varies by release, so check
+  [Compatibility](../docs/compatibility.md) and the
+  [PyPI files for your version](https://pypi.org/project/pydependencycheck/#files).
 
 ## Installation
 

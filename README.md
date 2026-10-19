@@ -4,6 +4,8 @@ Dependency intelligence and supply-chain security for Python projects. Scan depe
 
 > **Not to be confused with [PyDeepMesh](https://github.com/Mullassery/PyDeepMesh):** PyDeepMesh builds repository dependency graphs and matches advisories across ecosystems; PyDependencyCheck explains *why* each Python dependency exists, who added it, and whether it is used.
 
+> **Not affiliated with [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/):** the names are similar, but OWASP Dependency-Check is a separate multi-language SCA tool. PyDependencyCheck is a Python-specific CLI focused on provenance and governance.
+
 ## Which project do I need?
 
 Part of the Mullassery open-source family. These tools have similar names — here is the short version of who does what:
@@ -28,6 +30,25 @@ Part of the Mullassery open-source family. These tools have similar names — he
 ## What it is
 
 PyDependencyCheck helps you understand not just *what* you depend on, but *why* it's there and whether your dependency set is healthy. It combines dependency parsing, graph analysis, OSV vulnerability scanning, Git provenance, and licensing checks into a single CLI. A Rust core powers parsing, graph algorithms, and vulnerability lookups, wrapped in Python.
+
+## 30-second example
+
+Example output from this repository's `test_project/` (commit metadata is real):
+
+```bash
+$ pydependencycheck why requests
+requests
+  Version: ==2.32.0
+  Source: test_project/requirements.txt
+
+Introduced by:
+  Commit: 09fa4f3
+  Author: Georgi Mammen Mullassery
+  Date: 2026-08-03 01:55:27
+  Message: Initial PyDependencyCheck scaffold: Rust core + Python CLI, 5-phase roadmap
+```
+
+`why` and `trace` reconstruct provenance from real Git history. See [Provenance](docs/provenance.md).
 
 ## Features / Highlights
 
@@ -57,7 +78,7 @@ PyDependencyCheck helps you understand not just *what* you depend on, but *why* 
 
 ## Project status
 
-PyDependencyCheck is in beta (v1.5.0). Core features (scanning, provenance, health scoring, vulnerability checks, licensing, SBOM export, CI gating) are implemented. See [CHANGELOG.md](CHANGELOG.md) for recent fixes and updates.
+PyDependencyCheck is in beta (v1.5.0). Core features (scanning, provenance, health scoring, vulnerability checks, licensing, SBOM export, CI gating) are implemented. See [Project status](docs/status.md) for current gaps and [CHANGELOG.md](CHANGELOG.md) for recent changes.
 
 ### setup.py / setup.cfg support
 
@@ -91,7 +112,9 @@ Optional extras:
 pip install "pydependencycheck[sbom,otel,visualization]"
 ```
 
-Requires Python 3.8+. Prebuilt wheels available for Linux, macOS, and Windows.
+Requires Python 3.8+. Wheel availability depends on the release: check the
+[PyPI files for your version](https://pypi.org/project/pydependencycheck/#files)
+before installing, or build from source. See [Compatibility](docs/compatibility.md).
 
 ## Quick start
 
@@ -124,14 +147,19 @@ pydependencycheck gate --min-health 50
 |---|---|
 | `scan` | Parse manifests and show dependency overview |
 | `list` | List all detected dependencies |
-| `why <pkg>` | Show git blame provenance |
-| `trace <pkg>` | Show current status and git history |
+| `why <pkg>` | Show Git blame provenance |
+| `trace <pkg>` | Show current status and Git history |
 | `health` | Compute aggregate health score |
 | `licenses` | License classification and compatibility |
-| `analyze` | Deep graph analysis |
 | `remediate` | Suggest/apply fixes for vulnerable exact pins |
 | `export` | Export SBOM in CycloneDX/SPDX (optionally signed) |
+| `vex` | Export OSV findings as CycloneDX VEX |
 | `gate` | CI gate with exit code and annotations |
+| `snapshot` | Save a dependency baseline |
+| `drift` | Detect drift since a baseline |
+| `history` | Show dependency history and trends |
+
+Full flags: [Command reference](docs/commands.md).
 
 ## Known issues and deferred work
 
@@ -141,14 +169,28 @@ pydependencycheck gate --min-health 50
 **Rejected / deferred:**
 - Duplicate multi-ecosystem scanning.
 
-Full shipped/blocked/rejected detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+Current verified gaps: [Project status](docs/status.md). Historical detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
 
 ## Documentation
 
-- [Installation notes](.github/INSTALL.md)
+- [Quickstart](docs/quickstart.md)
+- [Provenance: why a dependency exists](docs/provenance.md)
+- [Health score](docs/health-score.md)
 - [CI gating with GitHub Actions](docs/ci-gating.md)
+- [SBOM export and signing](docs/sbom.md)
+- [VEX export](docs/vex.md)
+- [Command reference](docs/commands.md)
+- [Compatibility](docs/compatibility.md)
+- [Limitations](docs/limitations.md)
+- [Alternatives and comparisons](docs/alternatives.md)
+- [FAQ](docs/faq.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Architecture](docs/architecture.md)
+- [Project status](docs/status.md)
+- [Installation notes](.github/INSTALL.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
+- [Honest status / roadmap](ROADMAP_HONEST.md)
 
 ## License
 

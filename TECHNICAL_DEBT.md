@@ -39,18 +39,17 @@ None found.
 
 | ID | Category | Description | Source | Status | Fix |
 |---|---|---|---|---|---|
-| TD-0009 | STUB, ROADMAP | `setup.py`/`setup.cfg` AST/INI parsing are literal `// TODO` stubs (`crates/pydep-parser/src/setup.rs:7,14`) returning empty results; `python/pydependencycheck/scanner.py:372-373` has the matching Python-side TODO + warning log. | TODO_COMMENT | OPEN (already honestly documented in README.md and ROADMAP_HONEST.md — not hidden) | FUTURE_PHASE, no action needed beyond what's already tracked. |
+| TD-0009 | PARSER, ROADMAP | `setup.py`/`setup.cfg` static parsing. | VERIFIED (fixture with `setup.py` + `setup.cfg`, 2026-10-19; 5 dependencies detected) | **RESOLVED in v1.5.0** | Static `install_requires`/`extras_require` parsing shipped (Rust parser + Python AST/configparser fallback). Dynamic metadata (e.g. `read_requirements()`) is intentionally not executed and warns. |
 | TD-0010 | ARCHITECTURE | Root directory has local dev artifacts (`.coverage`, `dist/`, `target/`, `venv/`). | INFERRED, **VERIFIED RESOLVED** | RESOLVED | Confirmed via `git add -A` + `.gitignore`: all are correctly gitignored, not tracked in git. No action needed. |
 
 ## Explicit TODOs
 
-- `crates/pydep-parser/src/setup.rs:7` — "Implement AST parsing of setup.py" (TD-0009)
-- `crates/pydep-parser/src/setup.rs:14` — "Implement INI parsing of setup.cfg" (TD-0009)
-- `python/pydependencycheck/scanner.py:372` — "Implement proper setup.py AST parsing" (TD-0009)
+None remaining for TD-0009; the former TODO comments were removed when static
+`setup.py`/`setup.cfg` parsing shipped in v1.5.0.
 
 ## Stubs
 
-- `setup.py`/`setup.cfg` parsing (TD-0009) — honestly documented, not silently broken.
+None for `setup.py`/`setup.cfg` (TD-0009 resolved in v1.5.0).
 
 ## Resolved Historical Issues (from prior passes, verified still fixed)
 
@@ -86,4 +85,8 @@ None found in this pass — not deeply profiled; this audit focused on correctne
 
 ## Documentation Debt
 
-None found beyond what's already tracked in ROADMAP_HONEST.md. README.md's "Current Limitations" section already accurately describes the setup.py/setup.cfg gap (TD-0009) — verified, not re-documented here.
+The v1.5.0 documentation refresh added `docs/` (quickstart, provenance,
+health-score, ci-gating, sbom, vex, commands, compatibility, limitations,
+alternatives) and corrected stale claims in README/SECURITY. Remaining gap:
+`docs/commands.md` is maintained by hand and should be generated from `--help`
+once the CLI surface stabilizes.

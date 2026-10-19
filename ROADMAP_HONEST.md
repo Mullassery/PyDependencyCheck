@@ -1,7 +1,11 @@
 # PyDependencyCheck — Honest Status
 
-**Current Version:** v1.4.0 (matches the version live on PyPI — no drift)
-**Last Updated:** 2026-09-27
+**Current Version:** v1.5.0 (matches the version live on PyPI on 2026-10-19)
+**Last Updated:** 2026-10-19
+
+> This file is a dated engineering snapshot, not the primary user
+> documentation. Current user-facing docs live in [`docs/`](docs/). Some
+> sections below predate v1.5.0 and are annotated inline where they are stale.
 
 This file exists to say plainly what's built-and-verified, what's built-but-unverified,
 what's not built yet, and what's actively broken in CI/release infrastructure —
@@ -115,11 +119,12 @@ instead of from what the README merely claims.
 
 ## 🔴 Not built / not yet functional
 
-- **`setup.py`/`setup.cfg`-only projects are not parsed.** Both AST parsing of
-  `setup.py` (`crates/pydep-parser/src/setup.rs:7`) and INI parsing of `setup.cfg`
-  (`crates/pydep-parser/src/setup.rs:14`) are literal `// TODO` stubs — projects using
-  only these (no `requirements.txt`/`pyproject.toml`) aren't scanned at all, and
-  consequently aren't covered by `remediate` either.
+- **`setup.py`/`setup.cfg` static parsing shipped in v1.5.0.** *(This section
+  was accurate before 1.5.0.)* Static `install_requires` and `extras_require`
+  are now parsed from both files; verified on 2026-10-19 with a fixture that
+  contained both files and produced five dependencies. Dynamic metadata such as
+  `install_requires=read_requirements()` is still not executed — it is reported
+  as a warning. See [`docs/limitations.md`](docs/limitations.md).
 - **Health score "Quality" factor is a single metric**, not yet an aggregate of
   multiple quality signals (`python/pydependencycheck/scanner.py`).
 

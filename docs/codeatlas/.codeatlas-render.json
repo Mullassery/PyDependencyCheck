@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "outputs": {
+    "md": [
+      "crates.1.md",
+      "docs.2.md",
+      "overview.md",
+      "pydep_ast.1.1.md",
+      "pydep_graph.1.2.md",
+      "pydep_parser.1.3.md",
+      "pydep_py.1.4.md",
+      "pydep_security.1.5.md",
+      "python.3.md",
+      "tools.6.md"
+    ],
+    "html": [
+      "crates.1.html",
+      "docs.2.html",
+      "overview.html",
+      "pydep_ast.1.1.html",
+      "pydep_graph.1.2.html",
+      "pydep_parser.1.3.html",
+      "pydep_py.1.4.html",
+      "pydep_security.1.5.html",
+      "python.3.html",
+      "tools.6.html"
+    ]
+  }
+}

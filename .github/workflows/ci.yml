@@ -95,7 +95,7 @@ jobs:
       # step fails every run; continue-on-error keeps that from blocking the
       # rest of CI. See ROADMAP_HONEST.md.
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v7
         continue-on-error: true
         with:
           files: ./coverage.xml

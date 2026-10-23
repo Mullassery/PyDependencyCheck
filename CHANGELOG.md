@@ -16,6 +16,9 @@ in the current release.
 ### Fixed
 - Exported the native `ast` module and routed `setup.py`/`setup.cfg` files through the Python dependency parser.
 - Fixed the source distribution to include the PyO3 binding crate so `pip install` can build from sdist.
+- Correctly parse `setup.py` list literals (including constraints with commas)
+  and `extras_require`, and parse multiline `setup.cfg` `install_requires` /
+  `extras_require` entries while marking extras as development dependencies.
 
 ## [1.5.0] - 2026-10-19
 

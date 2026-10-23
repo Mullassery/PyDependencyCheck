@@ -190,11 +190,10 @@ class DependencyScanner:
         return self.parsed_deps
 
     # File types routed through the Rust PEP 508 parser (crates/pydep-parser):
-    # requirements*.txt, constraints.txt, pyproject.toml, setup.py and
-    # setup.cfg. The Rust parser handles setup.py literal install_requires;
-    # when it returns nothing for a setup file, `_parse_file` falls back to
-    # the static AST/configparser implementation in `_parse_setup_file`.
-    _RUST_PARSEABLE = ("constraints.txt", "pyproject.toml", "setup.py", "setup.cfg")
+    # requirements*.txt, constraints.txt and pyproject.toml. setup.py/setup.cfg
+    # use the static AST/configparser implementation in `_parse_setup_file`,
+    # which also covers extras_require (the Rust setup parser does not).
+    _RUST_PARSEABLE = ("constraints.txt", "pyproject.toml")
 
     def _parse_file(self, file_path: Path) -> List[Dict[str, Any]]:
         """Parse a single dependency file"""
@@ -203,17 +202,7 @@ class DependencyScanner:
 
         if HAS_RUST_BACKEND and rust_supported:
             try:
-                parsed = self._parse_file_rust(file_path)
-                # The Rust setup.py parser only handles a literal
-                # install_requires=[...] block.  When it finds nothing, fall
-                # back to the Python AST/configparser path instead of
-                # silently reporting a dependency-free project.
-                if parsed or file_name not in ("setup.py", "setup.cfg"):
-                    return parsed
-                logger.info(
-                    "Rust parser found no dependencies in %s; trying Python fallback",
-                    file_path,
-                )
+                return self._parse_file_rust(file_path)
             except Exception as e:
                 logger.warning(f"Rust parser failed for {file_path}, falling back to Python parser: {e}")
 

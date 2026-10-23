@@ -6,11 +6,12 @@ __email__ = "mullassery@gmail.com"
 __license__ = "Apache-2.0"
 
 try:
-    from ._pydependencycheck import graph, parser, security
+    from ._pydependencycheck import ast, graph, parser, security
 except ImportError:
     # Rust extension not built yet
+    ast = None
     parser = None
     graph = None
     security = None
 
-__all__ = ["parser", "graph", "security"]
+__all__ = ["ast", "parser", "graph", "security"]

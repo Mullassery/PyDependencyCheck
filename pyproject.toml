@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "pydependencycheck"
-version = "1.5.0"
+version = "1.5.1"
 description = "Dependency intelligence and governance platform for Python projects"
 readme = "README.md"
 authors = [
@@ -74,6 +74,7 @@ Issues = "https://github.com/Mullassery/pydependencycheck/issues"
 Documentation = "https://github.com/Mullassery/pydependencycheck/blob/main/README.md"
 
 [tool.maturin]
+manifest-path = "crates/pydep-py/Cargo.toml"
 features = ["pyo3/extension-module"]
 python-source = "python"
 module-name = "pydependencycheck._pydependencycheck"

@@ -11,6 +11,12 @@ real commit-level history of those releases, and
 [ROADMAP_HONEST.md](ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
+## [1.5.1] - 2026-10-23
+
+### Fixed
+- Exported the native `ast` module and routed `setup.py`/`setup.cfg` files through the Python dependency parser.
+- Fixed the source distribution to include the PyO3 binding crate so `pip install` can build from sdist.
+
 ## [1.5.0] - 2026-10-19
 
 ### Added

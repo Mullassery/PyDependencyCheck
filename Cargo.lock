@@ -765,7 +765,7 @@ dependencies = [
 
 [[package]]
 name = "pydep-ast"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "rayon",
  "serde",
@@ -777,7 +777,7 @@ dependencies = [
 
 [[package]]
 name = "pydep-graph"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "petgraph",
  "pydep-parser",
@@ -791,7 +791,7 @@ dependencies = [
 
 [[package]]
 name = "pydep-parser"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "rayon",
  "regex",
@@ -804,8 +804,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "pydep-py"
+version = "1.5.1"
+dependencies = [
+ "pydep-ast",
+ "pydep-graph",
+ "pydep-parser",
+ "pydep-security",
+ "pyo3",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
 name = "pydep-security"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "dirs",
  "mockito",
@@ -821,7 +836,7 @@ dependencies = [
 
 [[package]]
 name = "pydependencycheck"
-version = "1.5.0"
+version = "1.5.1"
 dependencies = [
  "pydep-ast",
  "pydep-graph",

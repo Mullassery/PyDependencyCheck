@@ -1,6 +1,6 @@
 [package]
 name = "pydependencycheck"
-version = "1.5.0"
+version = "1.5.1"
 edition = "2021"
 authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
 license = "Apache-2.0"
@@ -18,11 +18,12 @@ members = [
     "crates/pydep-graph",
     "crates/pydep-ast",
     "crates/pydep-security",
+    "crates/pydep-py",
 ]
 resolver = "2"
 
 [workspace.package]
-version = "1.5.0"
+version = "1.5.1"
 edition = "2021"
 authors = ["Georgi Mammen Mullassery <mullassery@gmail.com>"]
 license = "Apache-2.0"

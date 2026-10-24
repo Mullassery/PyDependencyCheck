@@ -272,13 +272,9 @@ installed (153/153 passing in that configuration):
 - **Line coverage is uneven across modules and low in several
   user-facing ones.** Overall: 58% (2055 statements, 860 missed).
   Worst offenders, with the specific missing line ranges:
-  - `python/pydependencycheck/vulnerabilities.py` — **0%** (123/123 lines
-    uncovered). This one is explained honestly in its own module docstring
-    (lines 1-9): it's a pure-Python OSV client kept for reference/library
-    use, not called by the CLI (the CLI uses the Rust `pydep-security`
-    crate instead via `DependencyScanner.check_vulnerabilities()`). Not
-    silently dead code — already disclosed in-repo — but still zero test
-    coverage on ~120 lines that ship in the package.
+  - ~~`python/pydependencycheck/vulnerabilities.py` — 0% coverage.~~
+    **Fixed:** `tests/test_vulnerabilities.py` covers OSV parsing, cache
+    behavior, severity/risk scoring, and offline degradation (~93% coverage).
   - `python/pydependencycheck/git_integration.py` — **20%**, missing
     lines 10-13, 22-30, 55, 73-117, 124-162, 166-185, 190-192, 196-197,
     201-211, 215-224. This backs `why`/`trace`, two of the commands the
@@ -311,9 +307,8 @@ installed (153/153 passing in that configuration):
     486-488, 516, 585-589, 617, 623-625, 635-657, 662-669 (158 of 397
     lines) — CLI error handling and several flag combinations aren't
     exercised by any test.
-  - No `tests/test_dashboard.py`, `tests/test_git_integration.py`, or
-    `tests/test_vulnerabilities.py` exist at all — three of the ten
-    `python/pydependencycheck/*.py` modules have zero dedicated test file.
+  - `tests/test_git_integration.py` and `tests/test_vulnerabilities.py` now
+    exist. `tests/test_dashboard.py` is still missing.
   - **This warrants a dedicated follow-up session** (not a quick fix): the
     gap is in exactly the two commands (`why`/`trace`) the README leads
     with as flagship use cases, so closing it means real integration tests

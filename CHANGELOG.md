@@ -11,6 +11,12 @@ real commit-level history of those releases, and
 [docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
+## [Unreleased]
+
+### Added
+- `tests/test_vulnerabilities.py` covers the pure-Python OSV fallback
+  client (parsing, cache, scoring, offline degradation).
+
 ## [1.5.1] - 2026-10-23
 
 ### Fixed

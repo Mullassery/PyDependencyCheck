@@ -285,10 +285,10 @@ installed (153/153 passing in that configuration):
     252-277, 281-291, 301-318, 328, 334-336, 341 — expected given the
     `skipif` gating, not a bug, but means CI (which doesn't install
     `otel`) never exercises most of this file.
-  - `python/pydependencycheck/dashboard.py` — **35%**, missing lines
-    30-78, 82-136, 140-179, 228-235, 250, 252, 258-280 — no
-    dashboard-specific test file exists in `tests/` at all (no
-    `test_dashboard.py`).
+  - ~~`python/pydependencycheck/dashboard.py` — 35% coverage, no test file.~~
+    **Improved:** `tests/test_dashboard.py` covers summary, drift, timeline,
+    health-details rendering, and score helpers (~63% coverage; live monitor
+    remains intentionally untested).
   - `python/pydependencycheck/sbom.py` — **48%**, missing lines 15-17,
     162, 166-179, 183-216, 224-246, 250-284, despite the README/ROADMAP
     calling SBOM export "built & verified" — the *signing/verification*
@@ -306,8 +306,8 @@ installed (153/153 passing in that configuration):
     486-488, 516, 585-589, 617, 623-625, 635-657, 662-669 (158 of 397
     lines) — CLI error handling and several flag combinations aren't
     exercised by any test.
-  - `tests/test_git_integration.py` and `tests/test_vulnerabilities.py` now
-    exist. `tests/test_dashboard.py` is still missing.
+  - `tests/test_git_integration.py`, `tests/test_vulnerabilities.py`, and
+    `tests/test_dashboard.py` now exist.
   - **This warrants a dedicated follow-up session** (not a quick fix): the
     gap is in exactly the two commands (`why`/`trace`) the README leads
     with as flagship use cases, so closing it means real integration tests

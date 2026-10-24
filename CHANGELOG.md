@@ -14,6 +14,8 @@ in the current release.
 ## [Unreleased]
 
 ### Added
+- Added Rich dashboard rendering tests (`tests/test_dashboard.py`).
+
 - Expanded git provenance tests for `GitIntegration` (blame, history,
   commit dependency parsing).
 

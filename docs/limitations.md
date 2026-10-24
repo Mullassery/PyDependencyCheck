@@ -34,7 +34,7 @@ on a green result.
   used. Expect noise and triage with VEX.
 - **PEP 440 edge cases.** Versions with `.postN`, `.devN`, local-version
   suffixes, or four or more numeric components may fall back to exact-string
-  matching rather than range matching. See `ROADMAP_HONEST.md` for the tracked
+  matching rather than range matching. See `internal/ROADMAP_HONEST.md` for the tracked
   gap.
 - **Offline mode does not check vulnerabilities.** `--offline` skips OSV and
   PyPI, so the resulting health score is a local hygiene score only.

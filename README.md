@@ -1,5 +1,11 @@
 # PyDependencyCheck
 
+[![CI](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml/badge.svg)](https://github.com/Mullassery/PyDependencyCheck/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/pydependencycheck.svg)](https://pypi.org/project/pydependencycheck/)
+[![Python](https://img.shields.io/pypi/pyversions/pydependencycheck.svg)](https://pypi.org/project/pydependencycheck/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
+[![Rust](https://img.shields.io/badge/rust-stable-orange.svg)](https://www.rust-lang.org/)
+
 Dependency intelligence and supply-chain security for Python projects. Scan dependencies, track provenance, detect unused packages, check licenses, generate signed SBOMs, and gate CI builds.
 
 > **Not to be confused with [PyDeepMesh](https://github.com/Mullassery/PyDeepMesh):** PyDeepMesh builds repository dependency graphs and matches advisories across ecosystems; PyDependencyCheck explains *why* each Python dependency exists, who added it, and whether it is used.
@@ -169,7 +175,7 @@ Full flags: [Command reference](docs/commands.md).
 **Rejected / deferred:**
 - Duplicate multi-ecosystem scanning.
 
-Current verified gaps: [Project status](docs/status.md). Historical detail: [`QUEUE_STATUS.md`](QUEUE_STATUS.md).
+Current verified gaps: [Project status](docs/status.md). Historical detail: [`docs/internal/QUEUE_STATUS.md`](docs/internal/QUEUE_STATUS.md).
 
 ## Documentation
 
@@ -190,7 +196,7 @@ Current verified gaps: [Project status](docs/status.md). Historical detail: [`QU
 - [Installation notes](.github/INSTALL.md)
 - [Contributing](CONTRIBUTING.md)
 - [Changelog](CHANGELOG.md)
-- [Honest status / roadmap](ROADMAP_HONEST.md)
+- [Honest status / roadmap](docs/internal/ROADMAP_HONEST.md)
 
 ## License
 

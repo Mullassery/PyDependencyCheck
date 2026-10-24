@@ -19,8 +19,8 @@
 
 ## Checklist
 
-- [ ] I updated `README.md` and/or `ROADMAP_HONEST.md` if this changes what's
+- [ ] I updated `README.md` and/or `../docs/internal/ROADMAP_HONEST.md` if this changes what's
       built, working, or broken (this project treats those as load-bearing
-      status docs, not just feature lists — see `ROADMAP_HONEST.md`'s intro)
+      status docs, not just feature lists — see `../docs/internal/ROADMAP_HONEST.md`'s intro)
 - [ ] I did not mark anything as "working" that I didn't actually run
 - [ ] New code has test coverage, or I explained why it doesn't

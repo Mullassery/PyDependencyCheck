@@ -8,7 +8,7 @@ entries for `v0.1.0`, `v1.0.0`, and `v1.4.0` are not reconstructed here to
 avoid fabricating history — see `git log` and the
 [GitHub tags](https://github.com/Mullassery/PyDependencyCheck/tags) for the
 real commit-level history of those releases, and
-[ROADMAP_HONEST.md](ROADMAP_HONEST.md) for what's actually verified working
+[docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) for what's actually verified working
 in the current release.
 
 ## [1.5.1] - 2026-10-23
@@ -45,7 +45,7 @@ in the current release.
   range-based vulnerability matching for that dependency, falling back to
   an exact-version-list match that real-world range advisories rarely
   populate. Fixed by reusing the same `parse_lenient` 2-part-padding helper
-  already applied to OSV range bounds. See `ROADMAP_HONEST.md` for the
+  already applied to OSV range bounds. See `docs/internal/ROADMAP_HONEST.md` for the
   verification detail and a residual (larger, undone) PEP 440 gap this
   doesn't cover.
 - `parse_constraints` (`crates/pydep-parser/src/constraint.rs`) was a
@@ -91,7 +91,7 @@ in the current release.
 - One residual advisory, RUSTSEC-2025-0009 (`ring` 0.17.9, AES overflow-check
   panic, debug-build-only impact), could not be resolved via `cargo update`
   due to a resolver lock conflict with `cc`; left open and documented rather
-  than risk destabilizing the lockfile — see TECHNICAL_DEBT.md TD-0005.
+  than risk destabilizing the lockfile — see docs/internal/TECHNICAL_DEBT.md TD-0005.
 
 ### Fixed
 - Lint drift: 5 ruff import-sort errors and 2 `F841` unused-variable findings
@@ -125,7 +125,7 @@ in the current release.
   `python/pydependencycheck/storage.py` with `black` (whitespace only, no
   logic changes) — both had drifted out of formatting and were failing
   `black --check python/`, which the `lint` CI job runs. See
-  `ROADMAP_HONEST.md` for why this keeps recurring and the suggested fix
+  `docs/internal/ROADMAP_HONEST.md` for why this keeps recurring and the suggested fix
   (pin `black`'s version / add a pre-commit hook).
 - Bumped deprecated GitHub Actions in `.github/workflows/ci.yml` and
   `wheels.yml`: `actions/cache@v3` → `v4`, `actions/setup-python@v4` → `v5`,
@@ -135,7 +135,7 @@ in the current release.
   `.github/workflows/ci.yml`'s `lint` job, replacing the unbounded
   `black>=23.0` / unpinned `pip install black ruff mypy`. This is the
   concrete fix for the `black --check` drift that had already recurred
-  three times (see `ROADMAP_HONEST.md`); reproduced it again with an
+  three times (see `docs/internal/ROADMAP_HONEST.md`); reproduced it again with an
   unpinned `black 26.5.1` and confirmed `25.11.0` is the version this
   repo's committed formatting actually matches, and the newest one still
   installable under the project's stated `requires-python = ">=3.8"`.
@@ -157,4 +157,4 @@ in the current release.
   `continue-on-error: true` and `fail_ci_if_error: false` are already in
   place so this degrades to a soft failure instead of turning the whole
   `python-tests` job red, but actually fixing coverage upload requires a
-  maintainer to add the secret. See `ROADMAP_HONEST.md`.
+  maintainer to add the secret. See `docs/internal/ROADMAP_HONEST.md`.

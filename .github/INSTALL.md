@@ -59,5 +59,5 @@ sudo apt-get install python3-dev build-essential
 
 After installation:
 1. See the [README](../README.md) for the quick start and full command reference.
-2. See [ROADMAP_HONEST.md](../ROADMAP_HONEST.md) for what's verified vs. not built.
+2. See [../docs/internal/ROADMAP_HONEST.md](../docs/internal/ROADMAP_HONEST.md) for what's verified vs. not built.
 3. See [CONTRIBUTING.md](../CONTRIBUTING.md) if you want to build from source or contribute.

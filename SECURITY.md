@@ -23,7 +23,7 @@ fixes land on `main` and ship in the next release.
 ## Known, Currently Open Security-Relevant Gaps
 
 Disclosed here instead of left implicit — see
-[ROADMAP_HONEST.md](ROADMAP_HONEST.md) for full detail:
+[docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) for full detail:
 
 - **Release publishing may still be manual.** The `.github/workflows/wheels.yml`
   `publish` job now uses PyPI Trusted Publishing (OIDC) and requires no
@@ -46,4 +46,4 @@ This project scans *other* projects' dependencies for known vulnerabilities.
 `.github/workflows/security-audit.yml` runs `cargo audit` and `pip-audit` in
 CI, and `.github/dependabot.yml` covers automated updates. There is currently
 no `pydependencycheck gate` step against this repository itself — see
-`ROADMAP_HONEST.md` for the tracked gap.
+`docs/internal/ROADMAP_HONEST.md` for the tracked gap.

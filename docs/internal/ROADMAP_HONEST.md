@@ -4,7 +4,7 @@
 **Last Updated:** 2026-10-19
 
 > This file is a dated engineering snapshot, not the primary user
-> documentation. Current user-facing docs live in [`docs/`](docs/). Some
+> documentation. Current user-facing docs live in [`docs/`](../../docs/). Some
 > sections below predate v1.5.0 and are annotated inline where they are stale.
 
 This file exists to say plainly what's built-and-verified, what's built-but-unverified,
@@ -124,7 +124,7 @@ instead of from what the README merely claims.
   are now parsed from both files; verified on 2026-10-19 with a fixture that
   contained both files and produced five dependencies. Dynamic metadata such as
   `install_requires=read_requirements()` is still not executed — it is reported
-  as a warning. See [`docs/limitations.md`](docs/limitations.md).
+  as a warning. See [`docs/limitations.md`](../../docs/limitations.md).
 - **Health score "Quality" factor is a single metric**, not yet an aggregate of
   multiple quality signals (`python/pydependencycheck/scanner.py`).
 

@@ -4,8 +4,8 @@
 
 This page is the current, user-facing status summary. For the long engineering
 snapshot and historical detail, see
-[`ROADMAP_HONEST.md`](../ROADMAP_HONEST.md), [`QUEUE_STATUS.md`](../QUEUE_STATUS.md),
-and [`AUDIT_FINDINGS.md`](../AUDIT_FINDINGS.md).
+[`internal/ROADMAP_HONEST.md`](internal/ROADMAP_HONEST.md), [`internal/QUEUE_STATUS.md`](internal/QUEUE_STATUS.md),
+and [`internal/AUDIT_FINDINGS.md`](internal/AUDIT_FINDINGS.md).
 
 ## Verified working (2026-10-19)
 

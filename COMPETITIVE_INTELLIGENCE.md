@@ -56,6 +56,8 @@ starts, and record the decision in the PR or changelog.
 
 ## OSS gap analysis — 2026-10-24
 
+**What matters most here:** modern lockfiles and installed environments. Skipping uv/Poetry/Pipfile locks yields false zero-dependency results; audit those plus deployed virtualenvs, then widen advisory sources and expose freshness.
+
 Scope: PyDependencyCheck assessed against four maintained Python/supply-chain tools on manifest and lockfile coverage, environment auditing, advisory sources, unused-dependency detection, SBOM/VEX output, remediation, and CI gating. Multi-language scanning was assessed only to locate the boundary with PyDeepMesh and OWASP Dependency-Check.
 
 ### Comparable OSS projects

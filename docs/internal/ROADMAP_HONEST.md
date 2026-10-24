@@ -275,11 +275,10 @@ installed (153/153 passing in that configuration):
   - ~~`python/pydependencycheck/vulnerabilities.py` — 0% coverage.~~
     **Fixed:** `tests/test_vulnerabilities.py` covers OSV parsing, cache
     behavior, severity/risk scoring, and offline degradation (~93% coverage).
-  - `python/pydependencycheck/git_integration.py` — **20%**, missing
-    lines 10-13, 22-30, 55, 73-117, 124-162, 166-185, 190-192, 196-197,
-    201-211, 215-224. This backs `why`/`trace`, two of the commands the
-    README leads with — most of the actual git-blame/history logic is
-    untested.
+  - ~~`python/pydependencycheck/git_integration.py` — 20% coverage.~~
+    **Improved:** `tests/test_git_integration.py` now covers blame line
+    numbers, history/version extraction, commit dependency parsing, and the
+    non-git fallback (~84% coverage).
   - `python/pydependencycheck/telemetry.py` — **21%** without the `otel`
     extra installed (58% with it), missing lines 11-16, 25-27, 34, 41,
     59-70, 77-84, 97-132, 136-164, 169-183, 188-200, 205-217, 221-248,

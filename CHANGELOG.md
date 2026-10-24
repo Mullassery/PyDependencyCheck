@@ -14,6 +14,9 @@ in the current release.
 ## [Unreleased]
 
 ### Added
+- Expanded git provenance tests for `GitIntegration` (blame, history,
+  commit dependency parsing).
+
 - `tests/test_vulnerabilities.py` covers the pure-Python OSV fallback
   client (parsing, cache, scoring, offline degradation).
 

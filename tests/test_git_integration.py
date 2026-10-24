@@ -56,3 +56,59 @@ def test_blame_second_line_of_second_hunk(tmp_path):
     info = gi.get_blame("django", filename="requirements.txt")
 
     assert info.line_no == 2
+
+
+def test_non_git_directory_is_reported(tmp_path):
+    gi = GitIntegration(str(tmp_path))
+    assert gi.is_git_repo() is False
+    assert gi.get_blame("flask").package == "flask"
+    assert gi.get_history("flask") == []
+    assert gi.get_commit_deps("HEAD") == {}
+
+
+def test_history_records_version_changes(tmp_path):
+    repo = _make_two_hunk_repo(tmp_path)
+    _commit_file(repo, tmp_path / "requirements.txt", "flask==2.1.0\ndjango==4.2\nnumpy==1.24\n", "bump flask")
+
+    gi = GitIntegration(str(tmp_path))
+    history = gi.get_history("flask")
+
+    assert [entry["version"] for entry in history] == ["2.1.0", "2.0.0", "2.0.0"]
+    assert history[0]["message"] == "bump flask"
+    assert history[0]["file"] == "requirements.txt"
+
+
+def test_commit_deps_reads_every_dependency_file(tmp_path):
+    repo = _make_two_hunk_repo(tmp_path)
+    _commit_file(repo, tmp_path / "pyproject.toml", '[project]\ndependencies = ["rich>=13"]\n', "add pyproject")
+    head = repo.head.commit.hexsha
+
+    gi = GitIntegration(str(tmp_path))
+    deps = gi.get_commit_deps(head)
+
+    assert "requirements.txt" in deps
+    assert deps["requirements.txt"] == ["flask", "django", "numpy"]
+    assert isinstance(deps["pyproject.toml"], list)
+
+
+def test_version_extraction_handles_operators(tmp_path):
+    gi = GitIntegration(str(tmp_path))
+    content = "\n".join(
+        [
+            "requests==2.32.0",
+            "django>=4.2,<5",
+            "numpy~=1.26.0",
+            "flask[async]>=3.0 ; python_version >= '3.10'",
+        ]
+    )
+    assert gi._extract_version("requests", content) == "2.32.0"
+    assert gi._extract_version("django", content) == "4.2"
+    assert gi._extract_version("numpy", content) == "1.26.0"
+    assert gi._extract_version("flask", content) == "3.0"
+    assert gi._extract_version("missing", content) is None
+
+
+def test_parse_content_skips_comments_and_blank_lines(tmp_path):
+    gi = GitIntegration(str(tmp_path))
+    content = "# comment\n\nrequests==2.32.0\nflask[async]>=3.0\n"
+    assert gi._parse_content(content) == ["requests", "flask"]

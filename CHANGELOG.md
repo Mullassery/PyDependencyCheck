@@ -14,6 +14,8 @@ in the current release.
 ## [Unreleased]
 
 ### Added
+- Added health-score and PyPI-staleness tests (`tests/test_health.py`).
+
 - Added Rich dashboard rendering tests (`tests/test_dashboard.py`).
 
 - Expanded git provenance tests for `GitIntegration` (blame, history,

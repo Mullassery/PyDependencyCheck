@@ -270,7 +270,7 @@ Measured 2026-09-20 via `pytest tests/ --cov=pydependencycheck
 installed (153/153 passing in that configuration):
 
 - **Line coverage is uneven across modules and low in several
-  user-facing ones.** Overall: 58% (2055 statements, 860 missed).
+  user-facing ones.** Overall: **74%** after the latest test additions (176 passed, 17 skipped).
   Worst offenders, with the specific missing line ranges:
   - ~~`python/pydependencycheck/vulnerabilities.py` — 0% coverage.~~
     **Fixed:** `tests/test_vulnerabilities.py` covers OSV parsing, cache
@@ -287,19 +287,17 @@ installed (153/153 passing in that configuration):
     `otel`) never exercises most of this file.
   - ~~`python/pydependencycheck/dashboard.py` — 35% coverage, no test file.~~
     **Improved:** `tests/test_dashboard.py` covers summary, drift, timeline,
-    health-details rendering, and score helpers (~63% coverage; live monitor
-    remains intentionally untested).
+    health-details rendering, and score helpers (**87%** coverage; the live
+    monitor loop remains intentionally untested).
   - `python/pydependencycheck/sbom.py` — **48%**, missing lines 15-17,
     162, 166-179, 183-216, 224-246, 250-284, despite the README/ROADMAP
     calling SBOM export "built & verified" — the *signing/verification*
     path is tested (`tests/test_sbom.py` exists and passes), but roughly
     half the module's lines (CycloneDX/SPDX serialization branches, error
     paths) aren't hit.
-  - `python/pydependencycheck/scanner.py` — **56%**, missing lines 15-17,
-    34, 41, 118-119, 176-177, 181-187, 229, 245-246, 252-298, 302-331,
-    336-337, 370, 383-385, 390-404, 415, 419-421, 435-453 — the module
-    implementing the actual `scan` command, including the `setup.py`/
-    `.cfg` TODO stub call site at line 335 (inside the 302-331 gap).
+  - `python/pydependencycheck/scanner.py` — **68%** after the latest test
+    additions; remaining misses are mostly platform fallbacks and error
+    branches.
   - `python/pydependencycheck/cli.py` — **60%**, missing lines 56-58,
     62-63, 67-72, 75-76, 90-113, 147-173, 181-202, 214-215, 223-224, 231,
     242-247, 276, 292, 300-302, 305, 313-334, 342-346, 354-385, 421-425,

@@ -9,7 +9,7 @@ If no wheel matches, build from source:
 
 ```bash
 pip install maturin
-git clone https://github.com/Mullassery/PyDependencyCheck
+git clone ../PyDependencyCheck
 cd PyDependencyCheck
 maturin build --release
 pip install target/wheels/pydependencycheck-*.whl
@@ -67,5 +67,5 @@ The key must be an unencrypted PEM RSA private key. `--sign` also requires
 ## Getting help
 
 - Check [FAQ](faq.md) and [Limitations](limitations.md).
-- Open an issue at <https://github.com/Mullassery/PyDependencyCheck/issues>.
+- Open an issue at <../PyDependencyCheck/issues>.
 - For security issues, follow `SECURITY.md` (do not open a public issue).

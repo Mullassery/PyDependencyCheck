@@ -309,5 +309,5 @@ README's Known Issues for detail).
 ## Feedback & Changes
 
 Submit feature requests and design discussions via:
-- [GitHub Issues](https://github.com/Mullassery/pydependencycheck/issues)
-- [GitHub Discussions](https://github.com/Mullassery/pydependencycheck/discussions)
+- [GitHub Issues](../pydependencycheck/issues)
+- [GitHub Discussions](../pydependencycheck/discussions)

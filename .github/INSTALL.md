@@ -29,7 +29,7 @@ Requires a Rust toolchain and [maturin](https://github.com/PyO3/maturin):
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
 # Clone and build
-git clone https://github.com/Mullassery/PyDependencyCheck
+git clone ../PyDependencyCheck
 cd PyDependencyCheck
 pip install maturin
 maturin build --release

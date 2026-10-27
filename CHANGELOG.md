@@ -6,7 +6,7 @@ All notable changes to this project are documented here. Format follows
 This file was started 2026-09-20. No changelog was kept before that date, so
 entries for `v0.1.0`, `v1.0.0`, and `v1.4.0` are not reconstructed here to
 avoid fabricating history — see `git log` and the
-[GitHub tags](https://github.com/Mullassery/PyDependencyCheck/tags) for the
+[GitHub tags](../PyDependencyCheck/tags) for the
 real commit-level history of those releases, and
 [docs/internal/ROADMAP_HONEST.md](docs/internal/ROADMAP_HONEST.md) for what's actually verified working
 in the current release.

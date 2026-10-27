@@ -12,7 +12,7 @@ Thanks for your interest in contributing! This guide covers development setup, t
 ### Clone & Build
 
 ```bash
-git clone https://github.com/Mullassery/PyDependencyCheck
+git clone ../PyDependencyCheck
 cd PyDependencyCheck
 
 # Create virtual environment
@@ -131,8 +131,8 @@ Describe what you want to build and why.
 
 ## Getting Help
 
-- **Discussions:** [GitHub Discussions](https://github.com/Mullassery/PyDependencyCheck/discussions)
-- **Issues:** [Report a bug](https://github.com/Mullassery/PyDependencyCheck/issues)
+- **Discussions:** [GitHub Discussions](../PyDependencyCheck/discussions)
+- **Issues:** [Report a bug](../PyDependencyCheck/issues)
 - **Email:** mullassery@gmail.com
 
 ---
